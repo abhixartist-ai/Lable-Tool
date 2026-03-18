@@ -2,7 +2,7 @@
 <html>
 <head>
 
-<title>Label Tool</title>
+<title>Amazon Label Tool</title>
 
 <link rel="icon" type="image/png" href="favicon.png">
 
@@ -43,6 +43,7 @@ padding:40px;
 text-align:center;
 background:white;
 margin-top:20px;
+transition:0.3s;
 }
 
 button{
@@ -80,24 +81,24 @@ z-index:9999;
 
 <div id="loginBox">
 <h2>Enter Password</h2>
-<input type="password" id="passInput" placeholder="Password">
+<input type="password" id="passInput">
 <button onclick="checkPassword()">Enter</button>
 <p id="errorMsg" style="color:red;"></p>
 </div>
 
-<h2>Amazon/Flipkart Label Tool <span style="font-size:13px;color:#888;">  New ProspectiveIndustries</span></h2>
+<h2>Amazon Label Tool <span style="font-size:13px;color:#888;">| abhishek</span></h2>
 
 <input type="file" id="pdfUpload">
 
-<div id="dropZone">Drag & Drop PDF Here</div>
-
-<p id="fileName"></p>
+<div id="dropZone">
+<span id="dropText">Drag & Drop PDF Here</span>
+</div>
 
 <br>
 
-<button onclick="processPDF()">Print Amazon Labels</button>
-<button onclick="processFlipkart()">Print Flipkart Labels</button>
-<button onclick="downloadSummary()">Amazon Summary Excel</button>
+<button onclick="processPDF()">Generate Amazon Labels</button>
+<button onclick="processFlipkart()">Flipkart Labels</button>
+<button onclick="downloadSummary()">Download Summary Excel</button>
 
 <p id="status"></p>
 
@@ -154,7 +155,8 @@ let reader=new FileReader()
 reader.onload=function(){
 pdfBuffer=this.result
 document.getElementById("status").innerText="PDF Loaded"
-document.getElementById("fileName").innerText="File: "+file.name
+document.getElementById("dropText").innerText=file.name
+document.getElementById("dropZone").style.borderColor="green"
 hideLoader()
 }
 
@@ -179,7 +181,8 @@ let reader=new FileReader()
 reader.onload=function(){
 pdfBuffer=this.result
 document.getElementById("status").innerText="PDF Loaded"
-document.getElementById("fileName").innerText="File: "+file.name
+document.getElementById("dropText").innerText=file.name
+document.getElementById("dropZone").style.borderColor="green"
 hideLoader()
 }
 
@@ -190,7 +193,7 @@ reader.readAsArrayBuffer(file)
 /* CSV */
 async function loadCSV(){
 let res=await fetch("sku_map.csv")
-let text=await res.text()
+let text=res?await res.text():""
 text.split("\n").slice(1).forEach(r=>{
 let c=r.split(",")
 if(c.length>=2){
@@ -290,8 +293,17 @@ pageNew.drawText(t2,{x:50+(t1.length*6),y:y,size:12,font:boldFont})
 }
 
 let blob=new Blob([await newPdf.save()],{type:"application/pdf"})
-let win=window.open(URL.createObjectURL(blob))
-win.onload=function(){hideLoader();win.print()}
+let url=URL.createObjectURL(blob)
+
+let win=window.open(url)
+
+/* PRINT FIX */
+setTimeout(()=>{win.print()},500)
+
+window.onfocus=function(){
+hideLoader()
+window.onfocus=null
+}
 
 }
 
@@ -318,8 +330,16 @@ newPdf.addPage(p)
 }
 
 let blob=new Blob([await newPdf.save()],{type:"application/pdf"})
-let win=window.open(URL.createObjectURL(blob))
-win.onload=function(){hideLoader();win.print()}
+let url=URL.createObjectURL(blob)
+
+let win=window.open(url)
+
+setTimeout(()=>{win.print()},500)
+
+window.onfocus=function(){
+hideLoader()
+window.onfocus=null
+}
 
 }
 
