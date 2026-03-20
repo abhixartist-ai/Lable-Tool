@@ -16,7 +16,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 <style>
 body{font-family:Arial;padding:30px;background:#f4f6ff;}
-
 h2{font-weight:600;color:#333;}
 
 #loginBox{
@@ -124,7 +123,6 @@ document.getElementById("loginBox").style.display="none"
 document.getElementById("errorMsg").innerText="Wrong Password"
 }
 }
-
 document.getElementById("passInput").addEventListener("keydown",e=>{
 if(e.key==="Enter")checkPassword()
 })
@@ -178,6 +176,44 @@ skuMap[c[0].trim()].push(c[1].trim())
 }
 loadCSV()
 
+/* PRINT FUNCTION */
+function openPrintWindow(blob){
+let url=URL.createObjectURL(blob)
+
+let win=window.open("", "_blank")
+
+win.document.write(`
+<html>
+<body style="margin:0">
+<iframe src="${url}" style="width:100%;height:100%;border:none;"></iframe>
+
+<script>
+let iframe=document.querySelector('iframe')
+
+iframe.onload=function(){
+setTimeout(()=>{
+iframe.contentWindow.focus()
+iframe.contentWindow.print()
+},300)
+}
+
+window.onafterprint=function(){
+window.close()
+}
+<\/script>
+
+</body>
+</html>
+`)
+win.document.close()
+
+window.onfocus=function(){
+hideLoader()
+window.onfocus=null
+}
+}
+
+/* AMAZON */
 async function processPDF(){
 
 if(!pdfBuffer){alert("Upload PDF first");return}
@@ -248,7 +284,7 @@ let pageNew=newPdf.getPages().pop()
 
 for(let j=0;j<items.length;j++){
 
-let y=190-(j*14)
+let y=180-(j*14)
 
 let t1=items[j].name+" ×"+items[j].qty+"      "
 let t2="("+items[j].pcs+")"
@@ -271,14 +307,11 @@ font:boldFont
 }
 
 let blob=new Blob([await newPdf.save()],{type:"application/pdf"})
-let win=window.open(URL.createObjectURL(blob))
-
-setTimeout(()=>{win.print()},500)
-
-window.onfocus=function(){hideLoader();window.onfocus=null}
+openPrintWindow(blob)
 
 }
 
+/* FLIPKART */
 async function processFlipkart(){
 
 if(!pdfBuffer){alert("Upload PDF first");return}
@@ -300,14 +333,11 @@ newPdf.addPage(p)
 }
 
 let blob=new Blob([await newPdf.save()],{type:"application/pdf"})
-let win=window.open(URL.createObjectURL(blob))
-
-setTimeout(()=>{win.print()},500)
-
-window.onfocus=function(){hideLoader();window.onfocus=null}
+openPrintWindow(blob)
 
 }
 
+/* EXCEL */
 function downloadSummary(){
 let data=[["Order No","S.No","SKU","Replacement","Qty","Total PCS"]]
 summary.forEach(r=>data.push([r.order,r.sno,r.sku,r.replacement,r.qty,r.pcs]))
@@ -317,6 +347,7 @@ XLSX.utils.book_append_sheet(wb,ws,"Summary")
 XLSX.writeFile(wb,"Amazon_summary_"+today+".xlsx")
 }
 
+/* SHORTCUTS */
 document.addEventListener("keydown",function(e){
 if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="a"){e.preventDefault();processPDF()}
 if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="f"){e.preventDefault();processFlipkart()}
