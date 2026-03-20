@@ -3,7 +3,6 @@
 <head>
 
 <title>Amazon Label Tool</title>
-
 <link rel="icon" type="image/png" href="favicon.png">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -16,63 +15,12 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-
-body{
-font-family:Arial;
-padding:30px;
-background:#f4f6ff;
-}
-
-#loginBox{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:#f4f6ff;
-display:flex;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-z-index:9999;
-}
-
-#dropZone{
-border:2px dashed #667eea;
-padding:40px;
-text-align:center;
-background:white;
-margin-top:20px;
-transition:0.3s;
-}
-
-button{
-padding:10px 20px;
-background:#667eea;
-color:white;
-border:none;
-cursor:pointer;
-margin-top:10px;
-}
-
-#loader{
-display:none;
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(255,255,255,0.7);
-justify-content:center;
-align-items:center;
-z-index:9999;
-}
-
-@keyframes spin {
-0% { transform: rotate(0deg); }
-100% { transform: rotate(360deg); }
-}
-
+body{font-family:Arial;padding:30px;background:#f4f6ff;}
+#loginBox{position:fixed;top:0;left:0;width:100%;height:100%;background:#f4f6ff;display:flex;justify-content:center;align-items:center;flex-direction:column;z-index:9999;}
+#dropZone{border:2px dashed #667eea;padding:40px;text-align:center;background:white;margin-top:20px;}
+button{padding:10px 20px;background:#667eea;color:white;border:none;cursor:pointer;margin-top:10px;}
+#loader{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.7);justify-content:center;align-items:center;z-index:9999;}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
 </style>
 
 </head>
@@ -86,7 +34,7 @@ z-index:9999;
 <p id="errorMsg" style="color:red;"></p>
 </div>
 
-<h2>Amazon/Flipkart Label Tool <span style="font-size:13px;color:#888;">  New ProspectiveIndustries</span></h2>
+<h2>Amazon Label Tool <span style="font-size:13px;color:#888;">| abhishek</span></h2>
 
 <input type="file" id="pdfUpload">
 
@@ -96,22 +44,14 @@ z-index:9999;
 
 <br>
 
-<button onclick="processPDF()">Print Amazon Labels</button>
-<button onclick="processFlipkart()">Print Flipkart Labels</button>
-<button onclick="downloadSummary()">Amazon  Summary Excel</button>
+<button onclick="processPDF()">Generate Amazon Labels</button>
+<button onclick="processFlipkart()">Flipkart Labels</button>
+<button onclick="downloadSummary()">Download Summary Excel</button>
 
 <p id="status"></p>
 
-<!-- LOADER -->
 <div id="loader">
-<div style="
-border:6px solid #eee;
-border-top:6px solid #667eea;
-border-radius:50%;
-width:50px;
-height:50px;
-animation:spin 1s linear infinite;">
-</div>
+<div style="border:6px solid #eee;border-top:6px solid #667eea;border-radius:50%;width:50px;height:50px;animation:spin 1s linear infinite;"></div>
 </div>
 
 <script>
@@ -129,29 +69,19 @@ document.getElementById("loginBox").style.display="none"
 document.getElementById("errorMsg").innerText="Wrong Password"
 }
 }
-
-document.getElementById("passInput").addEventListener("keydown",function(e){
-if(e.key==="Enter"){checkPassword()}
-})
+document.getElementById("passInput").addEventListener("keydown",e=>{if(e.key==="Enter")checkPassword()})
 
 /* LOADER */
 function showLoader(){document.getElementById("loader").style.display="flex"}
 function hideLoader(){document.getElementById("loader").style.display="none"}
 
-let pdfBuffer
-let skuMap={}
-let summary=[]
-let serial=1
-let orderNumber=1
+let pdfBuffer,skuMap={},summary=[],serial=1,orderNumber=1
 
 /* UPLOAD */
 document.getElementById("pdfUpload").addEventListener("change",function(e){
-
 let file=e.target.files[0]
 showLoader()
-
 let reader=new FileReader()
-
 reader.onload=function(){
 pdfBuffer=this.result
 document.getElementById("status").innerText="PDF Loaded"
@@ -159,25 +89,17 @@ document.getElementById("dropText").innerText=file.name
 document.getElementById("dropZone").style.borderColor="green"
 hideLoader()
 }
-
 reader.readAsArrayBuffer(file)
-
 })
 
-/* DRAG DROP */
+/* DRAG */
 const dropZone=document.getElementById("dropZone")
-
-dropZone.addEventListener("dragover",e=>{e.preventDefault()})
-
+dropZone.addEventListener("dragover",e=>e.preventDefault())
 dropZone.addEventListener("drop",e=>{
-
 e.preventDefault()
-
 let file=e.dataTransfer.files[0]
 showLoader()
-
 let reader=new FileReader()
-
 reader.onload=function(){
 pdfBuffer=this.result
 document.getElementById("status").innerText="PDF Loaded"
@@ -185,9 +107,7 @@ document.getElementById("dropText").innerText=file.name
 document.getElementById("dropZone").style.borderColor="green"
 hideLoader()
 }
-
 reader.readAsArrayBuffer(file)
-
 })
 
 /* CSV */
@@ -211,9 +131,7 @@ if(!pdfBuffer){alert("Upload PDF first");return}
 
 showLoader()
 
-summary=[]
-serial=1
-orderNumber=1
+summary=[];serial=1;orderNumber=1
 
 const pdf=await pdfjsLib.getDocument({data:pdfBuffer}).promise
 const newPdf=await PDFLib.PDFDocument.create()
@@ -278,13 +196,21 @@ let pageNew=newPdf.getPages().pop()
 
 for(let j=0;j<items.length;j++){
 
-let y=190-(j*14)
+let y=180-(j*14)
 
 let t1=items[j].name+" ×"+items[j].qty+"      "
 let t2="("+items[j].pcs+")"
 
 pageNew.drawText(t1,{x:50,y:y,size:12,font:normalFont})
-pageNew.drawText(t2,{x:50+(t1.length*6),y:y,size:12,font:boldFont})
+
+let width=normalFont.widthOfTextAtSize(t1,12)
+
+pageNew.drawText(t2,{
+x:50+width+5,
+y:y,
+size:12,
+font:boldFont
+})
 
 }
 
@@ -293,17 +219,11 @@ pageNew.drawText(t2,{x:50+(t1.length*6),y:y,size:12,font:boldFont})
 }
 
 let blob=new Blob([await newPdf.save()],{type:"application/pdf"})
-let url=URL.createObjectURL(blob)
+let win=window.open(URL.createObjectURL(blob))
 
-let win=window.open(url)
-
-/* PRINT FIX */
 setTimeout(()=>{win.print()},500)
 
-window.onfocus=function(){
-hideLoader()
-window.onfocus=null
-}
+window.onfocus=function(){hideLoader();window.onfocus=null}
 
 }
 
@@ -324,48 +244,34 @@ const [p]=await newPdf.copyPages(originalPdf,[i])
 const {height}=p.getSize()
 
 p.setCropBox(185,height-385,410-185,385-25)
-
 newPdf.addPage(p)
 
 }
 
 let blob=new Blob([await newPdf.save()],{type:"application/pdf"})
-let url=URL.createObjectURL(blob)
-
-let win=window.open(url)
+let win=window.open(URL.createObjectURL(blob))
 
 setTimeout(()=>{win.print()},500)
 
-window.onfocus=function(){
-hideLoader()
-window.onfocus=null
-}
+window.onfocus=function(){hideLoader();window.onfocus=null}
 
 }
 
 /* EXCEL */
 function downloadSummary(){
-
 let data=[["Order No","S.No","SKU","Replacement","Qty","Total PCS"]]
-
 summary.forEach(r=>data.push([r.order,r.sno,r.sku,r.replacement,r.qty,r.pcs]))
-
 let ws=XLSX.utils.aoa_to_sheet(data)
 let wb=XLSX.utils.book_new()
-
 XLSX.utils.book_append_sheet(wb,ws,"Summary")
-
 XLSX.writeFile(wb,"Amazon_summary_"+today+".xlsx")
-
 }
 
 /* SHORTCUTS */
 document.addEventListener("keydown",function(e){
-
 if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="a"){e.preventDefault();processPDF()}
 if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="f"){e.preventDefault();processFlipkart()}
 if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="e"){e.preventDefault();downloadSummary()}
-
 })
 
 </script>
