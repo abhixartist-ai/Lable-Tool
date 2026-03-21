@@ -17,7 +17,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 <style>
 
-/* ✅ FIXED SMOOTH BACKGROUND (NO BLOCK ISSUE) */
+/* ✅ FIXED BACKGROUND */
 body{
 font-family:Arial;
 padding:30px;
@@ -29,116 +29,70 @@ radial-gradient(circle at 20% 20%, #667eea22, transparent 40%),
 radial-gradient(circle at 80% 80%, #764ba222, transparent 40%),
 linear-gradient(135deg,#0f0f1a,#1a1a2e);
 
-background-repeat:no-repeat;
 background-size:cover;
+background-repeat:no-repeat;
 
 color:#e4e6eb;
 }
 
-/* SOFT GLOW */
+/* GLOW */
 .bg1,.bg2{
 position:fixed;
-width:400px;
-height:400px;
+width:400px;height:400px;
 filter:blur(150px);
 opacity:0.25;
 z-index:-1;
 }
-
-.bg1{
-top:-120px;left:-120px;
-background:#667eea;
-}
-.bg2{
-bottom:-120px;right:-120px;
-background:#764ba2;
-}
-
-/* HEADING */
-h2{
-color:#fff;
-}
+.bg1{top:-120px;left:-120px;background:#667eea;}
+.bg2{bottom:-120px;right:-120px;background:#764ba2;}
 
 /* LOGIN */
 #loginBox{
 position:fixed;
-top:0;left:0;
-width:100%;height:100%;
+top:0;left:0;width:100%;height:100%;
 background:#0f0f1a;
-display:flex;
-justify-content:center;
-align-items:center;
-flex-direction:column;
-z-index:9999;
+display:flex;justify-content:center;align-items:center;
+flex-direction:column;z-index:9999;
 }
 
 #passInput{
 width:300px;height:45px;
-font-size:18px;
-padding:8px 12px;
-border-radius:10px;
-border:1px solid #444;
-background:#1f1f2e;
-color:#fff;
+font-size:18px;padding:8px;
+border-radius:10px;border:1px solid #444;
+background:#1f1f2e;color:#fff;
 }
 
-#passInput:focus{
-border-color:#667eea;
-box-shadow:0 0 10px rgba(102,126,234,0.5);
-outline:none;
-}
-
-/* DROP ZONE */
+/* DROP */
 #dropZone{
 border:2px dashed #667eea;
-padding:40px;
-text-align:center;
+padding:40px;text-align:center;
 background:rgba(255,255,255,0.05);
-margin-top:20px;
-border-radius:12px;
+margin-top:20px;border-radius:12px;
 cursor:pointer;
-transition:0.3s;
-}
-
-#dropZone:hover{
-background:rgba(102,126,234,0.15);
 }
 
 #dropZone.active{
 background:rgba(0,255,150,0.15);
-border-color:#00ff99;
 }
 
 /* BUTTON */
 button{
 padding:12px 22px;
 background:linear-gradient(135deg,#667eea,#764ba2);
-color:white;
-border:none;
+color:white;border:none;
+margin-top:10px;border-radius:10px;
 cursor:pointer;
-margin-top:12px;
-border-radius:10px;
-font-weight:bold;
-transition:0.3s;
-}
-
-button:hover{
-transform:translateY(-2px);
-box-shadow:0 10px 25px rgba(102,126,234,0.4);
 }
 
 /* LOADER */
 #loader{
 display:none;
 position:fixed;
-top:0;left:0;
-width:100%;height:100%;
+top:0;left:0;width:100%;height:100%;
 background:rgba(0,0,0,0.6);
-justify-content:center;
-align-items:center;
+justify-content:center;align-items:center;
 z-index:9999;
 }
-
 #loader div{
 border:6px solid #333;
 border-top:6px solid #667eea;
@@ -146,17 +100,9 @@ border-radius:50%;
 width:60px;height:60px;
 animation:spin 1s linear infinite;
 }
-
 @keyframes spin{
 0%{transform:rotate(0)}
 100%{transform:rotate(360deg)}
-}
-
-/* MOBILE */
-@media(max-width:600px){
-body{padding:15px;}
-#dropZone{padding:25px;}
-button{width:100%;}
 }
 
 </style>
@@ -176,18 +122,14 @@ button{width:100%;}
 <p id="errorMsg" style="color:red;"></p>
 </div>
 
-<h2>
-🚀 Amazon / Flipkart Label Tool <br>
+<h2>🚀 Amazon / Flipkart Label Tool<br>
 <span style="font-size:13px;color:#aaa;">New Prospective Industries</span>
 </h2>
 
-<!-- UPLOAD -->
 <div id="dropZone">
-<input type="file" id="pdfUpload" accept="application/pdf" hidden>
+<input type="file" id="pdfUpload" hidden accept="application/pdf">
 <span id="dropText">Click or Drag & Drop PDF Here</span>
 </div>
-
-<br>
 
 <button onclick="processPDF()">Print Amazon Labels</button>
 <button onclick="processFlipkart()">Print Flipkart Labels</button>
@@ -199,27 +141,23 @@ button{width:100%;}
 
 <script>
 
-/* DATE */
-let d=new Date()
-let today=String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getFullYear()).slice(-2)
+let pdfBuffer, skuMap={}, summary=[], serial=1, orderNumber=1
 
 /* PASSWORD */
 function checkPassword(){
-if(document.getElementById("passInput").value==="1234"){
-document.getElementById("loginBox").style.display="none"
+if(passInput.value==="1234"){
+loginBox.style.display="none"
 }else{
-document.getElementById("errorMsg").innerText="Wrong Password"
+errorMsg.innerText="Wrong Password"
 }
 }
-document.getElementById("passInput").addEventListener("keydown",e=>{
+passInput.addEventListener("keydown",e=>{
 if(e.key==="Enter")checkPassword()
 })
 
 /* LOADER */
 function showLoader(){loader.style.display="flex"}
 function hideLoader(){loader.style.display="none"}
-
-let pdfBuffer
 
 /* UPLOAD */
 dropZone.onclick=()=>pdfUpload.click()
@@ -247,24 +185,90 @@ hideLoader()
 r.readAsArrayBuffer(file)
 }
 
-/* AMAZON PRINT */
+/* LOAD CSV */
+fetch("sku_map.csv")
+.then(r=>r.text())
+.then(t=>{
+t.split("\n").slice(1).forEach(r=>{
+let c=r.split(",")
+if(c.length>=2){
+if(!skuMap[c[0]]) skuMap[c[0]]=[]
+skuMap[c[0]].push(c[1])
+}
+})
+})
+
+/* AMAZON FULL WORKING */
 async function processPDF(){
 if(!pdfBuffer)return alert("Upload PDF")
 
 showLoader()
+summary=[];serial=1;orderNumber=1
 
 const pdf=await pdfjsLib.getDocument({data:pdfBuffer}).promise
 const newPdf=await PDFLib.PDFDocument.create()
 const original=await PDFLib.PDFDocument.load(pdfBuffer)
 
-for(let i=0;i<pdf.numPages;i++){
-const [p]=await newPdf.copyPages(original,[i])
+const normal=await newPdf.embedFont(PDFLib.StandardFonts.Helvetica)
+const bold=await newPdf.embedFont(PDFLib.StandardFonts.HelveticaBold)
+
+for(let i=1;i<=pdf.numPages;i++){
+const page=await pdf.getPage(i)
+const text=(await page.getTextContent()).items.map(i=>i.str).join(" ")
+
+if(!text.includes("Tax Invoice")){
+if(i>=pdf.numPages) continue
+
+const invoice=await pdf.getPage(i+1)
+const invText=(await invoice.getTextContent()).items.map(i=>i.str).join(" ")
+
+let sku=[...invText.matchAll(/\((.*?)\)/g)]
+let qty=[...invText.matchAll(/₹[\d\.]+\s+(\d+)/g)]
+
+let items=[]
+
+for(let k=0;k<sku.length;k++){
+let s=sku[k][1]
+let q=qty[k]?parseInt(qty[k][1]):1
+let rep=skuMap[s]||[s]
+
+let pcs=0
+rep.forEach(r=>{
+let m=r.match(/(\d+)$/)
+pcs+=m?parseInt(m[1]):1
+})
+
+pcs*=q
+
+items.push({name:rep.join(", "),qty:q,pcs:pcs})
+
+summary.push([orderNumber,serial++,s,rep.join(","),q,pcs])
+}
+
+orderNumber++
+
+const [p]=await newPdf.copyPages(original,[i-1])
 newPdf.addPage(p)
+
+let pageNew=newPdf.getPages().pop()
+
+items.forEach((it,j)=>{
+let y=180-(j*14)
+
+let t1=it.name+" ×"+it.qty+"      "
+let t2="("+it.pcs+")"
+
+pageNew.drawText(t1,{x:50,y:y,size:12,font:normal})
+
+let w=normal.widthOfTextAtSize(t1,12)
+
+pageNew.drawText(t2,{x:50+w+5,y:y,size:12,font:bold})
+})
+}
 }
 
 let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()],{type:"application/pdf"})))
 setTimeout(()=>win.print(),500)
-
 window.onfocus=()=>{hideLoader();window.onfocus=null}
 }
 
@@ -287,20 +291,22 @@ newPdf.addPage(p)
 
 let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()],{type:"application/pdf"})))
 setTimeout(()=>win.print(),500)
-
 window.onfocus=()=>{hideLoader();window.onfocus=null}
 }
 
-/* EXCEL */
+/* SUMMARY */
 function downloadSummary(){
-alert("Summary ready (your previous logic रहेगा)")
+let ws=XLSX.utils.aoa_to_sheet([["Order","Sno","SKU","Replace","Qty","PCS"],...summary])
+let wb=XLSX.utils.book_new()
+XLSX.utils.book_append_sheet(wb,ws,"Summary")
+XLSX.writeFile(wb,"Amazon_summary.xlsx")
 }
 
 /* SHORTCUTS */
 document.addEventListener("keydown",e=>{
-if(e.ctrlKey&&e.shiftKey&&e.key=="A")processPDF()
-if(e.ctrlKey&&e.shiftKey&&e.key=="F")processFlipkart()
-if(e.ctrlKey&&e.shiftKey&&e.key=="E")downloadSummary()
+if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="a")processPDF()
+if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="f")processFlipkart()
+if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="e")downloadSummary()
 })
 
 </script>
