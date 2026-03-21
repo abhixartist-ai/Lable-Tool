@@ -3,7 +3,8 @@
 <head>
 
 <title>Amazon / Flipkart Label Tool</title>
-<link rel="icon" type="image/png" href="favicon.png">
+<link rel="icon" href="favicon.png">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
@@ -17,20 +18,24 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 <style>
 
-/* ✅ FIXED BACKGROUND */
+/* ===== BACKGROUND FIXED ===== */
 body{
+margin:0;
 font-family:Arial;
 padding:30px;
-margin:0;
 min-height:100vh;
 
-background:
-radial-gradient(circle at 20% 20%, #667eea22, transparent 40%),
-radial-gradient(circle at 80% 80%, #764ba222, transparent 40%),
-linear-gradient(135deg,#0f0f1a,#1a1a2e);
+background: linear-gradient(
+135deg,
+#1e1e2f 0%,
+#1a1a2e 25%,
+#161622 50%,
+#12121c 75%,
+#0f0f18 100%
+);
 
-background-size:cover;
-background-repeat:no-repeat;
+background-attachment: fixed;
+background-repeat: no-repeat;
 
 color:#e4e6eb;
 }
@@ -38,59 +43,96 @@ color:#e4e6eb;
 /* GLOW */
 .bg1,.bg2{
 position:fixed;
-width:400px;height:400px;
+width:350px;height:350px;
 filter:blur(150px);
 opacity:0.25;
 z-index:-1;
 }
-.bg1{top:-120px;left:-120px;background:#667eea;}
-.bg2{bottom:-120px;right:-120px;background:#764ba2;}
+
+.bg1{
+top:-120px;left:-120px;
+background:#667eea;
+}
+.bg2{
+bottom:-120px;right:-120px;
+background:#764ba2;
+}
+
+/* SMOOTH OVERLAY */
+body::after{
+content:"";
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:
+radial-gradient(circle at 30% 20%, rgba(255,255,255,0.05), transparent 40%),
+radial-gradient(circle at 70% 80%, rgba(255,255,255,0.03), transparent 40%);
+pointer-events:none;
+}
+
+/* HEADING */
+h2{color:#fff;}
 
 /* LOGIN */
 #loginBox{
 position:fixed;
-top:0;left:0;width:100%;height:100%;
-background:#0f0f1a;
-display:flex;justify-content:center;align-items:center;
-flex-direction:column;z-index:9999;
+top:0;left:0;
+width:100%;height:100%;
+background:#12121c;
+display:flex;
+justify-content:center;
+align-items:center;
+flex-direction:column;
+z-index:9999;
 }
 
 #passInput{
 width:300px;height:45px;
-font-size:18px;padding:8px;
-border-radius:10px;border:1px solid #444;
-background:#1f1f2e;color:#fff;
+font-size:18px;
+border-radius:10px;
+border:1px solid #444;
+background:#1f1f2e;
+color:#fff;
+padding:8px;
 }
 
-/* DROP */
+/* DROP ZONE */
 #dropZone{
 border:2px dashed #667eea;
-padding:40px;text-align:center;
+padding:40px;
+text-align:center;
 background:rgba(255,255,255,0.05);
-margin-top:20px;border-radius:12px;
+margin-top:20px;
+border-radius:12px;
 cursor:pointer;
+transition:0.3s;
 }
 
 #dropZone.active{
 background:rgba(0,255,150,0.15);
+border-color:#00ff99;
 }
 
 /* BUTTON */
 button{
 padding:12px 22px;
 background:linear-gradient(135deg,#667eea,#764ba2);
-color:white;border:none;
-margin-top:10px;border-radius:10px;
+color:white;
+border:none;
 cursor:pointer;
+margin-top:12px;
+border-radius:10px;
 }
 
 /* LOADER */
 #loader{
 display:none;
 position:fixed;
-top:0;left:0;width:100%;height:100%;
+top:0;left:0;
+width:100%;height:100%;
 background:rgba(0,0,0,0.6);
-justify-content:center;align-items:center;
+justify-content:center;
+align-items:center;
 z-index:9999;
 }
 #loader div{
@@ -101,12 +143,16 @@ width:60px;height:60px;
 animation:spin 1s linear infinite;
 }
 @keyframes spin{
-0%{transform:rotate(0)}
-100%{transform:rotate(360deg)}
+100%{transform:rotate(360deg);}
+}
+
+/* MOBILE */
+@media(max-width:600px){
+body{padding:15px;}
+button{width:100%;}
 }
 
 </style>
-
 </head>
 
 <body>
@@ -122,14 +168,15 @@ animation:spin 1s linear infinite;
 <p id="errorMsg" style="color:red;"></p>
 </div>
 
-<h2>🚀 Amazon / Flipkart Label Tool<br>
-<span style="font-size:13px;color:#aaa;">New Prospective Industries</span>
-</h2>
+<h2>🚀 Amazon / Flipkart Label Tool <br>
+<span style="font-size:13px;color:#aaa;">New Prospective Industries</span></h2>
 
 <div id="dropZone">
-<input type="file" id="pdfUpload" hidden accept="application/pdf">
-<span id="dropText">Click or Drag & Drop PDF Here</span>
+<input type="file" id="pdfUpload" hidden>
+<span id="dropText">Click or Drag & Drop PDF</span>
 </div>
+
+<br>
 
 <button onclick="processPDF()">Print Amazon Labels</button>
 <button onclick="processFlipkart()">Print Flipkart Labels</button>
@@ -141,15 +188,15 @@ animation:spin 1s linear infinite;
 
 <script>
 
-let pdfBuffer, skuMap={}, summary=[], serial=1, orderNumber=1
+/* DATE */
+let d=new Date()
+let today=String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getFullYear()).slice(-2)
 
 /* PASSWORD */
 function checkPassword(){
 if(passInput.value==="1234"){
 loginBox.style.display="none"
-}else{
-errorMsg.innerText="Wrong Password"
-}
+}else errorMsg.innerText="Wrong Password"
 }
 passInput.addEventListener("keydown",e=>{
 if(e.key==="Enter")checkPassword()
@@ -159,123 +206,54 @@ if(e.key==="Enter")checkPassword()
 function showLoader(){loader.style.display="flex"}
 function hideLoader(){loader.style.display="none"}
 
-/* UPLOAD */
+let pdfBuffer,summary=[],serial=1
+
+/* FILE */
 dropZone.onclick=()=>pdfUpload.click()
+pdfUpload.onchange=handleFile
 
-pdfUpload.onchange=e=>handleFile(e.target.files[0])
-
+dropZone.ondragover=e=>{e.preventDefault()}
 dropZone.ondrop=e=>{
 e.preventDefault()
-handleFile(e.dataTransfer.files[0])
+handleFile({target:{files:[e.dataTransfer.files[0]]}})
 }
 
-dropZone.ondragover=e=>e.preventDefault()
-
-function handleFile(file){
-if(!file)return
+function handleFile(e){
+let f=e.target.files[0]
+if(!f)return
 showLoader()
-
 let r=new FileReader()
 r.onload=function(){
 pdfBuffer=this.result
-dropText.innerText="✔ "+file.name
+dropText.innerText="✔ "+f.name
 dropZone.classList.add("active")
 hideLoader()
 }
-r.readAsArrayBuffer(file)
+r.readAsArrayBuffer(f)
 }
 
-/* LOAD CSV */
-fetch("sku_map.csv")
-.then(r=>r.text())
-.then(t=>{
-t.split("\n").slice(1).forEach(r=>{
-let c=r.split(",")
-if(c.length>=2){
-if(!skuMap[c[0]]) skuMap[c[0]]=[]
-skuMap[c[0]].push(c[1])
-}
-})
-})
-
-/* AMAZON FULL WORKING */
+/* AMAZON */
 async function processPDF(){
-if(!pdfBuffer)return alert("Upload PDF")
-
+if(!pdfBuffer){alert("Upload PDF");return}
 showLoader()
-summary=[];serial=1;orderNumber=1
 
 const pdf=await pdfjsLib.getDocument({data:pdfBuffer}).promise
 const newPdf=await PDFLib.PDFDocument.create()
 const original=await PDFLib.PDFDocument.load(pdfBuffer)
 
-const normal=await newPdf.embedFont(PDFLib.StandardFonts.Helvetica)
-const bold=await newPdf.embedFont(PDFLib.StandardFonts.HelveticaBold)
-
-for(let i=1;i<=pdf.numPages;i++){
-const page=await pdf.getPage(i)
-const text=(await page.getTextContent()).items.map(i=>i.str).join(" ")
-
-if(!text.includes("Tax Invoice")){
-if(i>=pdf.numPages) continue
-
-const invoice=await pdf.getPage(i+1)
-const invText=(await invoice.getTextContent()).items.map(i=>i.str).join(" ")
-
-let sku=[...invText.matchAll(/\((.*?)\)/g)]
-let qty=[...invText.matchAll(/₹[\d\.]+\s+(\d+)/g)]
-
-let items=[]
-
-for(let k=0;k<sku.length;k++){
-let s=sku[k][1]
-let q=qty[k]?parseInt(qty[k][1]):1
-let rep=skuMap[s]||[s]
-
-let pcs=0
-rep.forEach(r=>{
-let m=r.match(/(\d+)$/)
-pcs+=m?parseInt(m[1]):1
-})
-
-pcs*=q
-
-items.push({name:rep.join(", "),qty:q,pcs:pcs})
-
-summary.push([orderNumber,serial++,s,rep.join(","),q,pcs])
-}
-
-orderNumber++
-
-const [p]=await newPdf.copyPages(original,[i-1])
+for(let i=0;i<pdf.numPages;i++){
+const [p]=await newPdf.copyPages(original,[i])
 newPdf.addPage(p)
-
-let pageNew=newPdf.getPages().pop()
-
-items.forEach((it,j)=>{
-let y=180-(j*14)
-
-let t1=it.name+" ×"+it.qty+"      "
-let t2="("+it.pcs+")"
-
-pageNew.drawText(t1,{x:50,y:y,size:12,font:normal})
-
-let w=normal.widthOfTextAtSize(t1,12)
-
-pageNew.drawText(t2,{x:50+w+5,y:y,size:12,font:bold})
-})
-}
 }
 
-let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()],{type:"application/pdf"})))
+let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()])))
 setTimeout(()=>win.print(),500)
 window.onfocus=()=>{hideLoader();window.onfocus=null}
 }
 
 /* FLIPKART */
 async function processFlipkart(){
-if(!pdfBuffer)return alert("Upload PDF")
-
+if(!pdfBuffer){alert("Upload PDF");return}
 showLoader()
 
 const pdf=await pdfjsLib.getDocument({data:pdfBuffer}).promise
@@ -285,28 +263,29 @@ const original=await PDFLib.PDFDocument.load(pdfBuffer)
 for(let i=0;i<pdf.numPages;i++){
 const [p]=await newPdf.copyPages(original,[i])
 const {height}=p.getSize()
-p.setCropBox(185,height-385,225,360)
+p.setCropBox(185,height-385,410-185,385-25)
 newPdf.addPage(p)
 }
 
-let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()],{type:"application/pdf"})))
+let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()])))
 setTimeout(()=>win.print(),500)
 window.onfocus=()=>{hideLoader();window.onfocus=null}
 }
 
-/* SUMMARY */
+/* EXCEL */
 function downloadSummary(){
-let ws=XLSX.utils.aoa_to_sheet([["Order","Sno","SKU","Replace","Qty","PCS"],...summary])
+let data=[["S.No"]]
+let ws=XLSX.utils.aoa_to_sheet(data)
 let wb=XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(wb,ws,"Summary")
-XLSX.writeFile(wb,"Amazon_summary.xlsx")
+XLSX.writeFile(wb,"Amazon_summary_"+today+".xlsx")
 }
 
-/* SHORTCUTS */
+/* SHORTCUT */
 document.addEventListener("keydown",e=>{
-if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="a")processPDF()
-if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="f")processFlipkart()
-if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="e")downloadSummary()
+if(e.ctrlKey&&e.shiftKey&&e.key=="A")processPDF()
+if(e.ctrlKey&&e.shiftKey&&e.key=="F")processFlipkart()
+if(e.ctrlKey&&e.shiftKey&&e.key=="E")downloadSummary()
 })
 
 </script>
