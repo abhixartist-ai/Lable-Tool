@@ -2,8 +2,8 @@
 <html>
 <head>
 
-<title>Amazon / Flipkart Label Tool</title>
-<link rel="icon" type="image/png" href="favicon.png">
+<title>Label Tool Pro</title>
+<link rel="icon" href="favicon.png">
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -18,44 +18,102 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 <style>
 
-/* DARK BACKGROUND */
+/* BODY */
 body{
-font-family:Arial;
-padding:30px;
+font-family:Poppins, sans-serif;
 margin:0;
-
-min-height:100vh;   /* full screen */
-
-background: linear-gradient(135deg,#1e1e2f,#12121c);
-
+padding:20px;
+background:linear-gradient(135deg,#0f172a,#1e293b);
 background-repeat: no-repeat;   /* block fix */
-background-attachment: fixed;   /* smooth scroll fix */
-
-color:#e4e6eb;
+color:white;
 }
 
-/* GLOW BACKGROUND */
-.bg1{
-position:fixed;
-top:-100px;left:-100px;
-width:300px;height:300px;
-background:#667eea;
-filter:blur(120px);
-opacity:0.3;
-}
-.bg2{
-position:fixed;
-bottom:-100px;right:-100px;
-width:300px;height:300px;
-background:#764ba2;
-filter:blur(120px);
-opacity:0.3;
+/* CONTAINER */
+.container{
+max-width:650px;
+margin:auto;
 }
 
-/* HEADING */
-h2{
+/* CARD */
+.card{
+background:#1e2633;
+padding:25px;
+border-radius:20px;
+box-shadow:0 10px 40px rgba(0,0,0,0.5);
+margin-top:20px;
+}
+
+.normal-heading{
+font-size:22px;
 font-weight:600;
 color:#ffffff;
+}
+
+/* GRADIENT TEXT */
+.gradient-text{
+font-size:26px;
+font-weight:700;
+
+background:linear-gradient(90deg,#ff4ecd,#6a8cff,#00d4ff,#ff4ecd);
+background-size:300%;
+
+-webkit-background-clip:text;
+-webkit-text-fill-color:transparent;
+
+animation:move 5s linear infinite;
+}
+
+@keyframes move{
+0%{background-position:0%}
+100%{background-position:300%}
+}
+
+/* DATE TIME */
+.datetime{
+margin-top:10px;
+font-size:14px;
+color:#cbd5e1;
+}
+
+/* DROP ZONE */
+#dropZone{
+border:2px dashed #6a8cff;
+padding:30px;
+text-align:center;
+border-radius:15px;
+cursor:pointer;
+margin-top:15px;
+background:#0f172a;
+transition:0.3s;
+}
+
+#dropZone:hover{
+background:#162033;
+}
+
+/* BUTTON */
+.btn{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:12px;
+background:linear-gradient(90deg,#6a8cff,#ff4ecd);
+color:white;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+}
+
+.btn:hover{
+opacity:0.85;
+}
+
+/* STATUS */
+#status{
+margin-top:10px;
+color:#94a3b8;
+font-size:14px;
 }
 
 /* LOGIN */
@@ -63,7 +121,7 @@ color:#ffffff;
 position:fixed;
 top:0;left:0;
 width:100%;height:100%;
-background:linear-gradient(135deg,#1e1e2f,#12121c);
+background:#0f172a;
 display:flex;
 justify-content:center;
 align-items:center;
@@ -71,73 +129,14 @@ flex-direction:column;
 z-index:9999;
 }
 
-/* INPUT */
-#passInput{
-width:300px;height:45px;
-font-size:18px;
-padding:8px 12px;
+input{
+padding:12px;
 border-radius:10px;
-border:1px solid #444;
-background:#1f1f2e;
-color:#fff;
-}
-
-#passInput:focus{
-border-color:#667eea;
-box-shadow:0 0 10px rgba(102,126,234,0.5);
-outline:none;
-}
-
-/* DROP ZONE */
-#dropZone{
-border:2px dashed #667eea;
-padding:40px;
-text-align:center;
-background:rgba(255,255,255,0.05);
-margin-top:20px;
-transition:0.3s;
-border-radius:12px;
-cursor:pointer;
-backdrop-filter:blur(10px);
-}
-
-#dropZone:hover{
-background:rgba(102,126,234,0.15);
-}
-
-#dropZone.active{
-background:rgba(0,255,150,0.15);
-border-color:#00ff99;
-box-shadow:0 0 20px rgba(0,255,150,0.3);
-}
-
-/* BUTTON */
-button{
-padding:12px 22px;
-background:linear-gradient(135deg,#667eea,#764ba2);
-color:white;
 border:none;
-cursor:pointer;
-margin-top:12px;
-transition:0.3s;
-border-radius:10px;
-font-weight:bold;
-}
-
-button:hover{
-transform:translateY(-2px) scale(1.02);
-box-shadow:0 10px 25px rgba(102,126,234,0.4);
-}
-
-button:active{
-transform:scale(0.97);
-box-shadow:0 5px 10px rgba(0,0,0,0.5);
-}
-
-/* STATUS */
-#status{
-color:#bbb;
 margin-top:10px;
+background:#1e293b;
+color:white;
+width:250px;
 }
 
 /* LOADER */
@@ -154,7 +153,7 @@ z-index:9999;
 
 #loader div{
 border:6px solid #333;
-border-top:6px solid #667eea;
+border-top:6px solid #6a8cff;
 border-radius:50%;
 width:60px;height:60px;
 animation:spin 1s linear infinite;
@@ -165,54 +164,51 @@ animation:spin 1s linear infinite;
 100%{transform:rotate(360deg)}
 }
 
-/* MOBILE */
-@media(max-width:600px){
-body{padding:15px;}
-#dropZone{padding:25px;font-size:14px;}
-button{width:100%;}
-}
-
 </style>
-
 </head>
 
 <body>
 
-<div class="bg1"></div>
-<div class="bg2"></div>
-
 <!-- LOGIN -->
 <div id="loginBox">
-<h2>Enter Password</h2>
+<h2 class="normal-heading">🔐 Enter Password</h2>
 <input type="password" id="passInput">
-<button onclick="checkPassword()">Enter</button>
+<button class="btn" onclick="checkPassword()">Enter</button>
 <p id="errorMsg" style="color:red;"></p>
 </div>
 
-<!-- HEADING -->
-<h2>
-🚀 Amazon / Flipkart Label Tool <br>
-<span style="font-size:13px;color:#aaa;">New Prospective Industries</span>
-</h2>
+<div class="container">
 
-<!-- UPLOAD BOX -->
-<div id="dropZone">
-<input type="file" id="pdfUpload" accept="application/pdf" hidden>
-<span id="dropText">Click or Drag & Drop PDF Here</span>
+<!-- GREETING -->
+<div class="card">
+<h2 class="gradient-text" id="greeting">Loading...</h2>
+<div class="datetime" id="datetime"></div>
 </div>
 
-<br>
+<!-- TOOL -->
+<div class="card">
 
-<button onclick="processPDF()">Print Amazon Labels</button>
-<button onclick="processFlipkart()">Print Flipkart Labels</button>
-<button onclick="downloadSummary()">Download Summary Excel</button>
+<h2 class="normal-heading">
+🚀 Amazon / Flipkart Label Tool
+</h2>
+
+<div id="dropZone">
+<input type="file" id="pdfUpload" accept="application/pdf" hidden>
+<span id="dropText">Click or Drag & Drop PDF</span>
+</div>
+
+<button class="btn" onclick="processPDF()">Print Amazon Labels</button>
+<button class="btn" onclick="processFlipkart()">Print Flipkart Labels</button>
+<button class="btn" onclick="downloadSummary()">Download Summary Excel</button>
 
 <p id="status"></p>
 
-<!-- LOADER -->
-<div id="loader">
-<div></div>
 </div>
+
+</div>
+
+<!-- LOADER -->
+<div id="loader"><div></div></div>
 
 <script>
 
@@ -233,26 +229,55 @@ document.getElementById("passInput").addEventListener("keydown",e=>{
 if(e.key==="Enter")checkPassword()
 })
 
+/* GREETING */
+function updateGreeting(){
+let h=new Date().getHours()
+let g=""
+
+if(h<12) g="🌅 Good Morning"
+else if(h<17) g="☀️ Good Afternoon"
+else if(h<21) g="🌇 Good Evening"
+else g="🌙 Good Night"
+
+document.getElementById("greeting").innerText=g
+}
+
+/* TIME */
+function updateTime(){
+let now=new Date()
+let day=now.toLocaleDateString('en-IN',{weekday:'long'})
+let date=now.toLocaleDateString('en-GB')
+let time=now.toLocaleTimeString()
+
+document.getElementById("datetime").innerText=
+`${day} | ${date} | ${time}`
+}
+
+updateGreeting()
+updateTime()
+setInterval(updateTime,1000)
+
 /* LOADER */
 function showLoader(){document.getElementById("loader").style.display="flex"}
 function hideLoader(){document.getElementById("loader").style.display="none"}
 
+/* FILE */
 let pdfBuffer,skuMap={},summary=[],serial=1,orderNumber=1
 
-/* UPLOAD + DRAG */
 const dropZone=document.getElementById("dropZone")
 const fileInput=document.getElementById("pdfUpload")
 
 dropZone.addEventListener("click",()=>fileInput.click())
+
 fileInput.addEventListener("change",handleFile)
 
 dropZone.addEventListener("dragover",e=>{
 e.preventDefault()
-dropZone.style.background="rgba(102,126,234,0.15)"
+dropZone.style.background="#162033"
 })
 
 dropZone.addEventListener("dragleave",()=>{
-dropZone.style.background="rgba(255,255,255,0.05)"
+dropZone.style.background="#0f172a"
 })
 
 dropZone.addEventListener("drop",e=>{
@@ -271,7 +296,6 @@ reader.onload=function(){
 pdfBuffer=this.result
 document.getElementById("status").innerText="PDF Loaded"
 document.getElementById("dropText").innerText="✔ "+file.name
-dropZone.classList.add("active")
 hideLoader()
 }
 reader.readAsArrayBuffer(file)
@@ -376,9 +400,7 @@ font:boldFont
 }
 
 let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()],{type:"application/pdf"})))
-
 setTimeout(()=>{win.print()},500)
-
 window.onfocus=function(){hideLoader();window.onfocus=null}
 }
 
@@ -400,9 +422,7 @@ newPdf.addPage(p)
 }
 
 let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()],{type:"application/pdf"})))
-
 setTimeout(()=>{win.print()},500)
-
 window.onfocus=function(){hideLoader();window.onfocus=null}
 }
 
@@ -415,13 +435,6 @@ let wb=XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(wb,ws,"Summary")
 XLSX.writeFile(wb,"Amazon_summary_"+today+".xlsx")
 }
-
-/* SHORTCUTS */
-document.addEventListener("keydown",function(e){
-if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="a"){e.preventDefault();processPDF()}
-if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="f"){e.preventDefault();processFlipkart()}
-if(e.ctrlKey&&e.shiftKey&&e.key.toLowerCase()=="e"){e.preventDefault();downloadSummary()}
-})
 
 </script>
 
