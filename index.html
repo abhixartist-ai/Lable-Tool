@@ -18,13 +18,17 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 
 <style>
 
+/* 🔥 IMPORTANT FIX */
+*, *::before, *::after{
+box-sizing:border-box;
+}
+
 /* BODY */
 body{
 font-family:Poppins, sans-serif;
 margin:0;
 padding:20px;
-background:linear-gradient(135deg,#1e1e2f,#12121c);
-min-height: 100vh;
+background:linear-gradient(135deg,#0f172a,#1e293b);
 color:white;
 }
 
@@ -43,14 +47,59 @@ box-shadow:0 10px 40px rgba(0,0,0,0.5);
 margin-top:20px;
 }
 
+/* LOGIN CARD */
+.login-card{
+background:#1e2633;
+padding:30px;
+border-radius:20px;
+box-shadow:0 10px 40px rgba(0,0,0,0.6);
+text-align:center;
+width:90%;
+max-width:350px;
+
+display:flex;
+flex-direction:column;
+align-items:center;
+}
+
+/* INPUT */
+.login-card input{
+width:100%;
+padding:12px;
+margin-top:10px;
+border-radius:10px;
+border:none;
+background:#0f172a;
+color:white;
+}
+
+/* BUTTON */
+.btn{
+width:100%;
+padding:12px;
+margin-top:10px;
+border:none;
+border-radius:12px;
+background:linear-gradient(90deg,#6a8cff,#721978);
+color:white;
+font-weight:bold;
+cursor:pointer;
+transition:0.3s;
+}
+
+.btn:hover{
+opacity:0.85;
+}
+
+/* NORMAL HEADING */
 .normal-heading{
 font-size:22px;
 font-weight:600;
 color:#ffffff;
 }
 
-/* GRADIENT TEXT */
-.gradient-text{
+/* GRADIENT ONLY GREETING */
+.gradient-animate{
 font-size:26px;
 font-weight:700;
 
@@ -68,7 +117,7 @@ animation:move 5s linear infinite;
 100%{background-position:300%}
 }
 
-/* DATE TIME */
+/* DATE */
 .datetime{
 margin-top:10px;
 font-size:14px;
@@ -91,24 +140,6 @@ transition:0.3s;
 background:#162033;
 }
 
-/* BUTTON */
-.btn{
-width:100%;
-padding:12px;
-margin-top:10px;
-border:none;
-border-radius:12px;
-background:linear-gradient(90deg,#667eea,#764ba2);
-color:white;
-font-weight:bold;
-cursor:pointer;
-transition:0.3s;
-}
-
-.btn:hover{
-opacity:0.85;
-}
-
 /* STATUS */
 #status{
 margin-top:10px;
@@ -116,7 +147,7 @@ color:#94a3b8;
 font-size:14px;
 }
 
-/* LOGIN */
+/* LOGIN SCREEN */
 #loginBox{
 position:fixed;
 top:0;left:0;
@@ -125,18 +156,7 @@ background:#0f172a;
 display:flex;
 justify-content:center;
 align-items:center;
-flex-direction:column;
 z-index:9999;
-}
-
-input{
-padding:12px;
-border-radius:10px;
-border:none;
-margin-top:10px;
-background:#1e293b;
-color:white;
-width:250px;
 }
 
 /* LOADER */
@@ -171,37 +191,39 @@ animation:spin 1s linear infinite;
 
 <!-- LOGIN -->
 <div id="loginBox">
-<h2 class="normal-heading">🔐 Enter Password</h2>
-<input type="password" id="passInput">
-<button class="btn" onclick="checkPassword()">Enter</button>
-<p id="errorMsg" style="color:red;"></p>
+  <div class="login-card">
+    <h2 class="normal-heading">🔐 Enter Password</h2>
+    <input type="password" id="passInput" placeholder="Enter password">
+    <button class="btn" onclick="checkPassword()">Enter</button>
+    <p id="errorMsg" style="color:red;"></p>
+  </div>
 </div>
 
 <div class="container">
 
 <!-- GREETING -->
 <div class="card">
-<h2 class="gradient-text" id="greeting">Loading...</h2>
-<div class="datetime" id="datetime"></div>
+  <h2 class="gradient-animate" id="greeting">Loading...</h2>
+  <div class="datetime" id="datetime"></div>
 </div>
 
 <!-- TOOL -->
 <div class="card">
 
-<h2 class="normal-heading">
-🚀 Amazon / Flipkart Label Tool
-</h2>
+  <h2 class="normal-heading">
+  🚀 Amazon / Flipkart Label Tool
+  </h2>
 
-<div id="dropZone">
-<input type="file" id="pdfUpload" accept="application/pdf" hidden>
-<span id="dropText">Click or Drag & Drop PDF</span>
-</div>
+  <div id="dropZone">
+    <input type="file" id="pdfUpload" accept="application/pdf" hidden>
+    <span id="dropText">Click or Drag & Drop PDF</span>
+  </div>
 
-<button class="btn" onclick="processPDF()">Print Amazon Labels</button>
-<button class="btn" onclick="processFlipkart()">Print Flipkart Labels</button>
-<button class="btn" onclick="downloadSummary()">Download Summary Excel</button>
+  <button class="btn" onclick="processPDF()">Print Amazon Labels</button>
+  <button class="btn" onclick="processFlipkart()">Print Flipkart Labels</button>
+  <button class="btn" onclick="downloadSummary()">Download Summary Excel</button>
 
-<p id="status"></p>
+  <p id="status"></p>
 
 </div>
 
