@@ -456,14 +456,58 @@ window.onfocus=function(){hideLoader();window.onfocus=null}
 
 /* EXCEL */
 function downloadSummary(){
-let data=[["Order No","S.No","SKU","Replacement","Qty","Total PCS"]]
-summary.forEach(r=>data.push([r.order,r.sno,r.sku,r.replacement,r.qty,r.pcs]))
-let ws=XLSX.utils.aoa_to_sheet(data)
-let wb=XLSX.utils.book_new()
-XLSX.utils.book_append_sheet(wb,ws,"Summary")
-XLSX.writeFile(wb,"Amazon_summary_"+today+".xlsx")
+
+let data = [["Order No","S.No","SKU","Replacement","Qty","Total PCS","","Category","Total"]]
+
+// 🔥 CATEGORY LIST
+const categories = ["SQ","BALL","CR","RH","HEART","4COM","3COM","MAT","GLOVES"]
+
+// 🔥 COUNT OBJECT
+let categoryCount = {
+SQ:0, BALL:0, CR:0, RH:0, HEART:0,
+"4COM":0, "3COM":0, MAT:0, GLOVES:0
 }
 
+// 🔥 ADD NORMAL DATA (A–F)
+summary.forEach(r=>{
+data.push([r.order,r.sno,r.sku,r.replacement,r.qty,r.pcs])
+
+let rep = r.replacement.toUpperCase()
+let qty = Number(r.qty)
+
+// ✅ BALL logic (BALL, FBALL, BBALL)
+if(rep.includes("BALL") || rep.includes("FBALL") || rep.includes("BBALL")){
+categoryCount["BALL"] += qty
+}
+
+// ✅ OTHER CATEGORIES
+categories.forEach(cat=>{
+if(cat === "BALL") return
+
+if(rep.includes(cat)){
+categoryCount[cat] += qty
+}
+})
+
+})
+
+
+// 🔥 ADD CATEGORY DATA (G–H)
+categories.forEach((cat,i)=>{
+if(!data[i+1]) data[i+1] = []
+
+data[i+1][7] = cat                 // Column H (Category)
+data[i+1][8] = categoryCount[cat] // Column I (Total)
+})
+
+
+// 🔥 CREATE EXCEL
+let ws = XLSX.utils.aoa_to_sheet(data)
+let wb = XLSX.utils.book_new()
+XLSX.utils.book_append_sheet(wb, ws, "Summary")
+
+XLSX.writeFile(wb, "Amazon_summary_"+today+".xlsx")
+}
 </script>
 
 </body>
