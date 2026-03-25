@@ -456,12 +456,99 @@ window.onfocus=function(){hideLoader();window.onfocus=null}
 
 /* EXCEL */
 function downloadSummary(){
-let data=[["Order No","S.No","SKU","Replacement","Qty","Total PCS"]]
-summary.forEach(r=>data.push([r.order,r.sno,r.sku,r.replacement,r.qty,r.pcs]))
-let ws=XLSX.utils.aoa_to_sheet(data)
-let wb=XLSX.utils.book_new()
-XLSX.utils.book_append_sheet(wb,ws,"Summary")
-XLSX.writeFile(wb,"Amazon_summary_"+today+".xlsx")
+
+let data = [["Order No","S.No","SKU","Replacement","Qty","Total PCS","Category","Total"]]
+
+// 🔥 CATEGORY LIST
+const categories = ["SQ","BALL","CR","RH","HEART","4COM","3COM","MAT","GLOVES"]
+
+// 🔥 COUNT OBJECT
+let categoryCount = {
+SQ:0, BALL:0, CR:0, RH:0, HEART:0,
+"4COM":0, "3COM":0, MAT:0, GLOVES:0
+}
+
+// 🔥 NORMAL DATA
+summary.forEach(r=>{
+data.push([r.order,r.sno,r.sku,r.replacement,r.qty,r.pcs])
+})
+
+// 🔥 RESET
+for(let key in categoryCount){
+categoryCount[key] = 0
+}
+
+// 🔥 MAIN LOGIC (ADVANCED)
+summary.forEach(r=>{
+
+let rep = r.replacement.toUpperCase()
+let qty = Number(r.qty)
+
+// 👉 Last number (total pieces)
+let match = rep.match(/-(\d+)\s*$/)
+let totalPieces = match ? parseInt(match[1]) : 1
+
+// 👉 Extract categories with weight
+let found = {}
+
+// 🔥 BALL case
+if(rep.includes("BALL") || rep.includes("FBALL") || rep.includes("BBALL")){
+found["BALL"] = 1
+}
+
+// 🔥 FIND ALL CATEGORIES (WITH NUMBER SUPPORT)
+categories.forEach(cat=>{
+if(cat === "BALL") return
+
+let regex = new RegExp(cat + "(\\d*)")
+let m = rep.match(regex)
+
+if(m){
+let weight = m[1] ? parseInt(m[1]) : 1
+found[cat] = weight
+}
+})
+
+// 👉 Sum of weights
+let totalWeight = Object.values(found).reduce((a,b)=>a+b,0)
+
+// 👉 DISTRIBUTION
+if(Object.keys(found).length === 1){
+// single category
+let cat = Object.keys(found)[0]
+categoryCount[cat] += qty * totalPieces
+}
+else if(totalWeight > 0){
+// multiple category → weighted distribution
+for(let cat in found){
+let weight = found[cat]
+
+// proportional share
+let value = (weight / totalWeight) * totalPieces * qty
+
+// round safe
+categoryCount[cat] += Math.round(value)
+}
+}
+
+})
+
+
+// 🔥 ADD CATEGORY DATA
+categories.forEach((cat,i)=>{
+if(!data[i+1]) data[i+1] = []
+
+data[i+1][6] = cat
+data[i+1][7] = categoryCount[cat]
+})
+
+
+// 🔥 CREATE EXCEL
+let ws = XLSX.utils.aoa_to_sheet(data)
+let wb = XLSX.utils.book_new()
+XLSX.utils.book_append_sheet(wb, ws, "Summary")
+
+XLSX.writeFile(wb, "Amazon_summary_"+today+".xlsx")
 }
 
 </script>
