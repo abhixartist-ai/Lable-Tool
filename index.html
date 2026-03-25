@@ -431,6 +431,53 @@ setTimeout(()=>{win.print()},500)
 window.onfocus=function(){hideLoader();window.onfocus=null}
 }
 
+/* FLIPKART LABEL CROP */
+
+async function processFlipkart(){
+
+const loadingTask = pdfjsLib.getDocument({data: pdfBuffer})
+const pdf = await loadingTask.promise
+
+const newPdf = await PDFLib.PDFDocument.create()
+const originalPdf = await PDFLib.PDFDocument.load(pdfBuffer)
+
+for(let i=0;i<pdf.numPages;i++){
+
+const [page]=await newPdf.copyPages(originalPdf,[i])
+
+const {width,height}=page.getSize()
+
+page.setCropBox(
+185,
+height-385,
+410-185,
+385-25
+)
+
+newPdf.addPage(page)
+
+}
+
+const pdfBytes=await newPdf.save()
+
+let blob=new Blob([pdfBytes],{type:"application/pdf"})
+let blobUrl = URL.createObjectURL(blob)
+
+let iframe = document.createElement("iframe")
+iframe.style.display="none"
+iframe.src = blobUrl
+
+document.body.appendChild(iframe)
+
+iframe.onload=function(){
+iframe.contentWindow.print()
+}
+
+document.getElementById("status").innerText="Flipkart Labels Ready"
+
+}
+
+
 /* EXCEL (SAFE VERSION) */
 function downloadSummary(){
 
