@@ -141,12 +141,7 @@ transition:0.3s;
 }
 
 #dropZone:hover{
-background:#423059;
-}
-
-#dropZone.drag-hover{
-  background:#423059;
-  border-color:#00d4ff;
+background:#540f43;
 }
 
 /* STATUS */
@@ -460,7 +455,6 @@ window.onfocus=function(){hideLoader();window.onfocus=null}
 }
 
 /* EXCEL */
-
 function downloadSummary(){
 
 let data = [["Order No","S.No","SKU","Replacement","Qty","Total PCS","Category","Total"]]
@@ -555,7 +549,7 @@ let wb = XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(wb, ws, "Summary")
 
 XLSX.writeFile(wb, "Amazon_summary_"+today+".xlsx")
-  }
+}
 
 </script>
 
