@@ -369,7 +369,7 @@ const invText=(await invoice.getTextContent()).items.map(i=>i.str).join(" ")
 
 if(!invText.includes("Tax Invoice")) continue
 
-let sku=[...invText.matchAll(/\(\s*([A-Z0-9\-\.]+)\s*\)/g)]
+let sku=[...invText.matchAll(/\(\s*([A-Z0-9]+(?:-[A-Z0-9]+)+)\s*\)/g]
 let qty=[...invText.matchAll(/₹[\d\.]+\s+(\d+)\s+₹/g)]
 
 let items=[]
