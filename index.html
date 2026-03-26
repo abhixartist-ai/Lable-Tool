@@ -140,8 +140,21 @@ background:#0f172a;
 transition:0.3s;
 }
 
+/* 🩷 Hover */
 #dropZone:hover{
 background:#540f43;
+}
+
+/* 🟢 Drag */
+#dropZone.dragover{
+background: rgba(0, 200, 83, 0.15);
+border-color:#00c853;
+}
+
+/* 🟡 Uploaded */
+#dropZone.uploaded{
+background: rgba(255, 204, 0, 0.2);
+border-color:#ffcc00;
 }
 
 /* STATUS */
@@ -230,7 +243,6 @@ animation:spin 1s linear infinite;
   <button class="btn" onclick="processFlipkart()">Print Flipkart Labels</button>
   <button class="btn" onclick="downloadSummary()">Download Summary Excel</button>
 
- 
 </div>
 
 </div>
@@ -297,19 +309,24 @@ const fileInput=document.getElementById("pdfUpload")
 
 dropZone.addEventListener("click",()=>fileInput.click())
 
-fileInput.addEventListener("change",handleFile)
+fileInput.addEventListener("change",e=>{
+handleFile(e)
+dropZone.classList.add("uploaded")
+})
 
 dropZone.addEventListener("dragover",e=>{
 e.preventDefault()
-dropZone.style.background="#d6ad45"
+dropZone.classList.add("dragover")
 })
 
 dropZone.addEventListener("dragleave",()=>{
-dropZone.style.background="#68a360"
+dropZone.classList.remove("dragover")
 })
 
 dropZone.addEventListener("drop",e=>{
 e.preventDefault()
+dropZone.classList.remove("dragover")
+dropZone.classList.add("uploaded")
 handleFile({target:{files:[e.dataTransfer.files[0]]}})
 })
 
@@ -478,72 +495,69 @@ for(let key in categoryCount){
 categoryCount[key] = 0
 }
 
-// 🔥 MAIN LOGIC (ADVANCED)
+// 🔥 SAFE LOGIC
 summary.forEach(r=>{
+
+if(!r.replacement) return
 
 let rep = r.replacement.toUpperCase()
 let qty = Number(r.qty)
 
-// 👉 Last number (total pieces)
+// last number
 let match = rep.match(/-(\d+)\s*$/)
 let totalPieces = match ? parseInt(match[1]) : 1
 
-// 👉 Extract categories with weight
 let found = {}
 
-// 🔥 BALL case
+// BALL
 if(rep.includes("BALL") || rep.includes("FBALL") || rep.includes("BBALL")){
 found["BALL"] = 1
 }
 
-// 🔥 FIND ALL CATEGORIES (WITH NUMBER SUPPORT)
 categories.forEach(cat=>{
+
 if(cat === "BALL") return
 
-let regex = new RegExp(cat + "(\\d*)")
-let m = rep.match(regex)
+if(cat === "4COM" && rep.includes("4COM")){
+found["4COM"] = 1
+return
+}
+if(cat === "3COM" && rep.includes("3COM")){
+found["3COM"] = 1
+return
+}
+
+let m = rep.match(new RegExp(cat + "(\\d*)"))
 
 if(m){
 let weight = m[1] ? parseInt(m[1]) : 1
 found[cat] = weight
 }
+
 })
 
-// 👉 Sum of weights
 let totalWeight = Object.values(found).reduce((a,b)=>a+b,0)
 
-// 👉 DISTRIBUTION
 if(Object.keys(found).length === 1){
-// single category
 let cat = Object.keys(found)[0]
 categoryCount[cat] += qty * totalPieces
 }
 else if(totalWeight > 0){
-// multiple category → weighted distribution
 for(let cat in found){
 let weight = found[cat]
-
-// proportional share
 let value = (weight / totalWeight) * totalPieces * qty
-
-// round safe
 categoryCount[cat] += Math.round(value)
 }
 }
 
 })
 
-
-// 🔥 ADD CATEGORY DATA
 categories.forEach((cat,i)=>{
 if(!data[i+1]) data[i+1] = []
-
 data[i+1][6] = cat
 data[i+1][7] = categoryCount[cat]
 })
 
-
-// 🔥 CREATE EXCEL
 let ws = XLSX.utils.aoa_to_sheet(data)
 let wb = XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(wb, ws, "Summary")
