@@ -495,25 +495,33 @@ for(let key in categoryCount){
 categoryCount[key] = 0
 }
 
-// 🔥 SAFE LOGIC
+// 🔥 MAIN LOGIC (FIXED)
 summary.forEach(r=>{
 
 if(!r.replacement) return
 
-let reps = r.replacement.toUpperCase().split(",")
 let qty = Number(r.qty)
 
-// last number
+// 👉 SPLIT multiple replacements
+let reps = r.replacement.toUpperCase().split(",")
+
+reps.forEach(rep=>{
+
+rep = rep.trim()
+
+// 👉 last number
 let match = rep.match(/-(\d+)\s*$/)
 let totalPieces = match ? parseInt(match[1]) : 1
 
+// 👉 detect categories with weight
 let found = {}
 
-// BALL
+// BALL special
 if(rep.includes("BALL") || rep.includes("FBALL") || rep.includes("BBALL")){
 found["BALL"] = 1
 }
 
+// other categories
 categories.forEach(cat=>{
 
 if(cat === "BALL") return
@@ -536,28 +544,36 @@ found[cat] = weight
 
 })
 
+// 👉 APPLY LOGIC
 let totalWeight = Object.values(found).reduce((a,b)=>a+b,0)
 
+// ✅ single category
 if(Object.keys(found).length === 1){
 let cat = Object.keys(found)[0]
 categoryCount[cat] += qty * totalPieces
 }
+
+// ✅ multiple category (EXACT no rounding)
 else if(totalWeight > 0){
 for(let cat in found){
 let weight = found[cat]
 let value = (weight / totalWeight) * totalPieces * qty
-categoryCount[cat] += Math.round(value)
+categoryCount[cat] += value   // ❌ no Math.round
 }
 }
 
 })
 
+})
+
+// 🔥 ADD CATEGORY TO SHEET
 categories.forEach((cat,i)=>{
 if(!data[i+1]) data[i+1] = []
 data[i+1][6] = cat
 data[i+1][7] = categoryCount[cat]
 })
 
+// 🔥 EXPORT
 let ws = XLSX.utils.aoa_to_sheet(data)
 let wb = XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(wb, ws, "Summary")
