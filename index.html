@@ -202,106 +202,18 @@ animation:spin 1s linear infinite;
 
 <div id="loader"><div></div></div>
 
+<!-- 🔥 ONLY CHANGED PARTS (बाकी same रहेगा) -->
+
 <script>
 
+/* DATE */
 let d=new Date()
 let today=String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getFullYear()).slice(-2)
 
-function checkPassword(){
-let pass=document.getElementById("passInput").value
-if(pass==="1234"){
-document.getElementById("loginBox").style.display="none"
-}else{
-document.getElementById("errorMsg").innerText="Wrong Password"
-}
-}
-
-document.getElementById("passInput").addEventListener("keydown",e=>{
-if(e.key==="Enter")checkPassword()
-})
-
-function updateGreeting(){
-let h=new Date().getHours()
-let g=""
-if(h<12) g="🔆 Good Morning"
-else if(h<17) g="☀️ Good Afternoon"
-else if(h<21) g="⛅️ Good Evening"
-else g="🌙💤 Good Night"
-document.getElementById("greeting").innerText=g
-}
-
-function updateTime(){
-let now=new Date()
-let day=now.toLocaleDateString('en-IN',{weekday:'long'})
-let date=now.toLocaleDateString('en-GB')
-let time=now.toLocaleTimeString()
-document.getElementById("datetime").innerText=`${day} | ${date} | ${time}`
-}
-
-updateGreeting()
-updateTime()
-setInterval(updateTime,1000)
-
-function showLoader(){document.getElementById("loader").style.display="flex"}
-function hideLoader(){document.getElementById("loader").style.display="none"}
-
+/* GLOBAL */
 let pdfBuffer,skuMap={},summary=[],serial=1,orderNumber=1
 
-const dropZone=document.getElementById("dropZone")
-const fileInput=document.getElementById("pdfUpload")
-
-dropZone.addEventListener("click",()=>fileInput.click())
-
-fileInput.addEventListener("change",e=>{
-handleFile(e)
-dropZone.classList.add("uploaded")
-})
-
-dropZone.addEventListener("dragover",e=>{
-e.preventDefault()
-dropZone.classList.add("dragover")
-})
-
-dropZone.addEventListener("dragleave",()=>{
-dropZone.classList.remove("dragover")
-})
-
-dropZone.addEventListener("drop",e=>{
-e.preventDefault()
-dropZone.classList.remove("dragover")
-dropZone.classList.add("uploaded")
-handleFile({target:{files:[e.dataTransfer.files[0]]}})
-})
-
-function handleFile(e){
-let file=e.target.files[0]
-if(!file)return
-
-showLoader()
-
-let reader=new FileReader()
-reader.onload=function(){
-pdfBuffer=this.result
-document.getElementById("status").innerText="PDF Loaded"
-document.getElementById("dropText").innerText="✔ "+file.name
-hideLoader()
-}
-reader.readAsArrayBuffer(file)
-}
-
-async function loadCSV(){
-let res=await fetch("sku_map.csv")
-let text=res?await res.text():""
-text.split("\n").slice(1).forEach(r=>{
-let c=r.split(",")
-if(c.length>=2){
-if(!skuMap[c[0].trim()]) skuMap[c[0].trim()]=[]
-skuMap[c[0].trim()].push(c[1].trim())
-}
-})
-}
-loadCSV()
-
+/* AMAZON */
 async function processPDF(){
 if(!pdfBuffer){alert("Upload PDF first");return}
 
@@ -316,14 +228,16 @@ const normalFont=await newPdf.embedFont(PDFLib.StandardFonts.Helvetica)
 const boldFont=await newPdf.embedFont(PDFLib.StandardFonts.HelveticaBold)
 
 for(let i=1;i<=pdf.numPages;i++){
+
 const page=await pdf.getPage(i)
 const text=(await page.getTextContent()).items.map(i=>i.str).join(" ")
 
-// 🔥 ORDER ID EXTRACT
+// ✅ ORDER ID EXTRACT
 let orderIdMatch = text.match(/\d{3}-\d{7}-\d{7}/)
 let orderId = orderIdMatch ? orderIdMatch[0] : ""
 
 if(!text.includes("Tax Invoice")){
+
 if(i>=pdf.numPages) continue
 
 const invoice=await pdf.getPage(i+1)
@@ -337,6 +251,7 @@ let qty=[...invText.matchAll(/₹[\d\.]+\s+(\d+)\s+₹/g)]
 let items=[]
 
 for(let k=0;k<sku.length;k++){
+
 let s=sku[k][1]
 let q=qty[k]?parseInt(qty[k][1]):1
 
@@ -352,15 +267,17 @@ let pcs=pack*q
 
 items.push({name:rep.join(", "),qty:q,pcs:pcs})
 
+// ✅ SUMMARY FIXED
 summary.push({
 order:k==0?orderNumber:"",
-orderId:orderId,
+orderId: orderId,
 sno:serial++,
 sku:s,
 replacement:rep.join(", "),
 qty:q,
 pcs:pcs
 })
+
 }
 
 orderNumber++
@@ -371,15 +288,25 @@ newPdf.addPage(p)
 let pageNew=newPdf.getPages().pop()
 
 for(let j=0;j<items.length;j++){
+
 let y=190-(j*14)
+
 let t1=items[j].name+" ×"+items[j].qty+"      "
 let t2="("+items[j].pcs+")"
 
 pageNew.drawText(t1,{x:50,y:y,size:12,font:normalFont})
+
 let width=normalFont.widthOfTextAtSize(t1,12)
 
-pageNew.drawText(t2,{x:50+width+5,y:y,size:12,font:boldFont})
+pageNew.drawText(t2,{
+x:50+width+5,
+y:y,
+size:12,
+font:boldFont
+})
+
 }
+
 }
 }
 
@@ -388,53 +315,107 @@ setTimeout(()=>{win.print()},500)
 window.onfocus=function(){hideLoader();window.onfocus=null}
 }
 
-/* EXCEL FINAL */
+
+/* EXCEL */
 function downloadSummary(){
 
-let data = [["Order No","Order ID","S.No","SKU","Replacement","Qty","Total PCS","Category","Total"]]
+let data = [[
+"Order No",
+"Order ID",
+"S.No",
+"SKU",
+"Replacement",
+"Qty",
+"Total PCS",
+"Category",
+"Total"
+]]
 
+// 🔥 CATEGORY LIST
 const categories = ["SQ","BALL","CR","RH","HEART","4COM","3COM","MAT","GLOVES"]
 
-let categoryCount = {SQ:0,BALL:0,CR:0,RH:0,HEART:0,"4COM":0,"3COM":0,MAT:0,GLOVES:0}
+// 🔥 COUNT OBJECT
+let categoryCount = {
+SQ:0, BALL:0, CR:0, RH:0, HEART:0,
+"4COM":0, "3COM":0, MAT:0, GLOVES:0
+}
 
+// 🔥 NORMAL DATA
 summary.forEach(r=>{
-data.push([r.order,r.orderId,r.sno,r.sku,r.replacement,r.qty,r.pcs])
+data.push([
+r.order,
+r.orderId,
+r.sno,
+r.sku,
+r.replacement,
+r.qty,
+r.pcs
+])
 })
 
-for(let key in categoryCount){categoryCount[key]=0}
+// 🔥 RESET
+for(let key in categoryCount){
+categoryCount[key] = 0
+}
 
+// 🔥 MAIN LOGIC
 summary.forEach(r=>{
 
-let qty=Number(r.qty)
-let reps=r.replacement.toUpperCase().split(",")
+if(!r.replacement) return
+
+let qty = Number(r.qty)
+
+let reps = r.replacement.toUpperCase().split(",")
 
 reps.forEach(rep=>{
 
-rep=rep.trim()
-let match=rep.match(/-(\d+)\s*$/)
-let totalPieces=match?parseInt(match[1]):1
+rep = rep.trim()
 
-let found={}
+let match = rep.match(/-(\d+)\s*$/)
+let totalPieces = match ? parseInt(match[1]) : 1
 
-if(rep.includes("BALL")||rep.includes("FBALL")||rep.includes("BBALL")) found["BALL"]=1
+let found = {}
 
+// BALL
+if(rep.includes("BALL") || rep.includes("FBALL") || rep.includes("BBALL")){
+found["BALL"] = 1
+}
+
+// OTHERS
 categories.forEach(cat=>{
-if(cat==="BALL")return
-if(cat==="4COM"&&rep.includes("4COM")){found["4COM"]=1;return}
-if(cat==="3COM"&&rep.includes("3COM")){found["3COM"]=1;return}
 
-let m=rep.match(new RegExp(cat+"(\\d*)"))
-if(m){found[cat]=m[1]?parseInt(m[1]):1}
+if(cat === "BALL") return
+
+if(cat === "4COM" && rep.includes("4COM")){
+found["4COM"] = 1
+return
+}
+if(cat === "3COM" && rep.includes("3COM")){
+found["3COM"] = 1
+return
+}
+
+let m = rep.match(new RegExp(cat + "(\\d*)"))
+
+if(m){
+let weight = m[1] ? parseInt(m[1]) : 1
+found[cat] = weight
+}
+
 })
 
-let totalWeight=Object.values(found).reduce((a,b)=>a+b,0)
+// APPLY
+let totalWeight = Object.values(found).reduce((a,b)=>a+b,0)
 
-if(Object.keys(found).length===1){
-let cat=Object.keys(found)[0]
-categoryCount[cat]+=qty*totalPieces
-}else if(totalWeight>0){
+if(Object.keys(found).length === 1){
+let cat = Object.keys(found)[0]
+categoryCount[cat] += qty * totalPieces
+}
+else if(totalWeight > 0){
 for(let cat in found){
-categoryCount[cat]+= (found[cat]/totalWeight)*totalPieces*qty
+let weight = found[cat]
+let value = (weight / totalWeight) * totalPieces * qty
+categoryCount[cat] += value
 }
 }
 
@@ -442,17 +423,20 @@ categoryCount[cat]+= (found[cat]/totalWeight)*totalPieces*qty
 
 })
 
+// ✅ CATEGORY → H, TOTAL → I
 categories.forEach((cat,i)=>{
-if(!data[i+1]) data[i+1]=[]
-data[i+1][7]=cat
-data[i+1][8]=categoryCount[cat]
+if(!data[i+1]) data[i+1] = []
+
+data[i+1][7] = cat
+data[i+1][8] = categoryCount[cat]
 })
 
-let ws=XLSX.utils.aoa_to_sheet(data)
-let wb=XLSX.utils.book_new()
-XLSX.utils.book_append_sheet(wb,ws,"Summary")
+// EXPORT
+let ws = XLSX.utils.aoa_to_sheet(data)
+let wb = XLSX.utils.book_new()
+XLSX.utils.book_append_sheet(wb, ws, "Summary")
 
-XLSX.writeFile(wb,"Amazon_summary_"+today+".xlsx")
+XLSX.writeFile(wb, "Amazon_summary_"+today+".xlsx")
 }
 
 </script>
