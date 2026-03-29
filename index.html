@@ -17,8 +17,13 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-*, *::before, *::after{box-sizing:border-box;}
 
+/* 🔥 IMPORTANT FIX */
+*, *::before, *::after{
+box-sizing:border-box;
+}
+
+/* BODY */
 body{
 font-family:Poppins, sans-serif;
 margin:0;
@@ -28,17 +33,23 @@ background:linear-gradient(135deg,#0f172a,#2f0130);
 color:white;
 }
 
-.container{max-width:650px;margin:auto;}
+/* CONTAINER */
+.container{
+max-width:650px;
+margin:auto;
+}
 
+/* CARD */
 .card{
 background:#1e2633;
-border:1px solid rgb(255,255,255,0.15);
+border:1px solid rgb(255, 255,255,0.15);
 padding:25px;
 border-radius:20px;
 box-shadow:0 10px 40px rgba(0,0,0,0.5);
 margin-top:20px;
 }
 
+/* LOGIN CARD */
 .login-card{
 background:#1e2633;
 padding:30px;
@@ -47,11 +58,13 @@ box-shadow:0 10px 40px rgba(0,0,0,0.6);
 text-align:center;
 width:90%;
 max-width:350px;
+
 display:flex;
 flex-direction:column;
 align-items:center;
 }
 
+/* INPUT */
 .login-card input{
 width:100%;
 padding:12px;
@@ -62,6 +75,7 @@ background:#0f172a;
 color:white;
 }
 
+/* BUTTON */
 .btn{
 width:100%;
 padding:12px;
@@ -75,17 +89,28 @@ cursor:pointer;
 transition:0.3s;
 }
 
-.btn:hover{opacity:0.85;}
+.btn:hover{
+opacity:0.85;
+}
 
-.normal-heading{font-size:22px;font-weight:600;color:#fff;}
+/* NORMAL HEADING */
+.normal-heading{
+font-size:22px;
+font-weight:600;
+color:#ffffff;
+}
 
+/* GRADIENT ONLY GREETING */
 .gradient-animate{
 font-size:26px;
 font-weight:700;
+
 background:linear-gradient(90deg,#ff4ecd,#6a8cff,#00d4ff,#ff4ecd);
 background-size:300%;
+
 -webkit-background-clip:text;
 -webkit-text-fill-color:transparent;
+
 animation:move 5s linear infinite;
 }
 
@@ -94,8 +119,14 @@ animation:move 5s linear infinite;
 100%{background-position:300%}
 }
 
-.datetime{margin-top:10px;font-size:14px;color:#cbd5e1;}
+/* DATE */
+.datetime{
+margin-top:10px;
+font-size:14px;
+color:#cbd5e1;
+}
 
+/* DROP ZONE */
 #dropZone{
 height:80px;
 border:2px dashed #6a8cff;
@@ -109,18 +140,24 @@ background:#0f172a;
 transition:0.3s;
 }
 
-#dropZone:hover{background:#2f0130;}
+/* 🩷 Hover */
+#dropZone:hover{
+background:#2f0130;
+}
 
+/* 🟢 Drag */
 #dropZone.dragover{
-background: rgba(0,200,83,0.15);
+background: rgba(0, 200, 83, 0.15);
 border-color:#00c853;
 }
 
+/* 🟡 Uploaded */
 #dropZone.uploaded{
-background: rgba(255,204,0,0.2);
+background: rgba(255, 204, 0, 0.2);
 border-color:#ffcc00;
 }
 
+/* STATUS */
 #status{
 margin:0;
 min-height:16px;
@@ -128,6 +165,7 @@ color:#94a3b8;
 font-size:14px;
 }
 
+/* LOGIN SCREEN */
 #loginBox{
 position:fixed;
 top:0;left:0;
@@ -139,6 +177,7 @@ align-items:center;
 z-index:9999;
 }
 
+/* LOADER */
 #loader{
 display:none;
 position:fixed;
@@ -162,47 +201,54 @@ animation:spin 1s linear infinite;
 0%{transform:rotate(0)}
 100%{transform:rotate(360deg)}
 }
+
 </style>
 </head>
 
 <body>
 
+<!-- LOGIN -->
 <div id="loginBox">
-<div class="login-card">
-<h2 class="normal-heading">🔐 Enter Password</h2>
-<input type="password" id="passInput" placeholder="Enter password">
-<button class="btn" onclick="checkPassword()">Enter</button>
-<p id="errorMsg" style="color:red;"></p>
-</div>
+  <div class="login-card">
+    <h2 class="normal-heading">🔐 Enter Password</h2>
+    <input type="password" id="passInput" placeholder="Enter password">
+    <button class="btn" onclick="checkPassword()">Enter</button>
+    <p id="errorMsg" style="color:red;"></p>
+  </div>
 </div>
 
 <div class="container">
 
+<!-- GREETING -->
 <div class="card">
-<h2 class="gradient-animate" id="greeting">Loading...</h2>
-<div class="datetime" id="datetime"></div>
+  <h2 class="gradient-animate" id="greeting">Loading...</h2>
+  <div class="datetime" id="datetime"></div>
 </div>
 
+<!-- TOOL -->
 <div class="card">
-<h2 class="normal-heading">🚀 Amazon / Flipkart Label Tool</h2>
 
-<div id="dropZone">
-<input type="file" id="pdfUpload" accept="application/pdf" hidden>
-<span id="dropText">Click or Drag & Drop PDF</span>
+  <h2 class="normal-heading">
+  🚀 Amazon / Flipkart Label Tool
+  </h2>
+
+  <div id="dropZone">
+    <input type="file" id="pdfUpload" accept="application/pdf" hidden>
+    <span id="dropText">Click or Drag & Drop PDF</span>
+  </div>
+
+  <p id="status"></p>
+
+  <button class="btn" onclick="processPDF()">Print Amazon Labels</button>
+  <button class="btn" onclick="processFlipkart()">Print Flipkart Labels</button>
+  <button class="btn" onclick="downloadSummary()">Download Summary Excel</button>
+
 </div>
 
-<p id="status"></p>
-
-<button class="btn" onclick="processPDF()">Print Amazon Labels</button>
-<button class="btn" onclick="processFlipkart()">Print Flipkart Labels</button>
-<button class="btn" onclick="downloadSummary()">Download Summary Excel</button>
-
-</div>
 </div>
 
+<!-- LOADER -->
 <div id="loader"><div></div></div>
-
-<!-- 🔥 ONLY CHANGED PARTS (बाकी same रहेगा) -->
 
 <script>
 
@@ -210,8 +256,109 @@ animation:spin 1s linear infinite;
 let d=new Date()
 let today=String(d.getDate()).padStart(2,'0')+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getFullYear()).slice(-2)
 
-/* GLOBAL */
+/* PASSWORD */
+function checkPassword(){
+let pass=document.getElementById("passInput").value
+if(pass==="1234"){
+document.getElementById("loginBox").style.display="none"
+}else{
+document.getElementById("errorMsg").innerText="Wrong Password"
+}
+}
+document.getElementById("passInput").addEventListener("keydown",e=>{
+if(e.key==="Enter")checkPassword()
+})
+
+/* GREETING */
+function updateGreeting(){
+let h=new Date().getHours()
+let g=""
+
+if(h<12) g="🔆 Good Morning"
+else if(h<17) g="☀️ Good Afternoon"
+else if(h<21) g="⛅️ Good Evening"
+else g="🌙💤 Good Night"
+
+document.getElementById("greeting").innerText=g
+}
+
+/* TIME */
+function updateTime(){
+let now=new Date()
+let day=now.toLocaleDateString('en-IN',{weekday:'long'})
+let date=now.toLocaleDateString('en-GB')
+let time=now.toLocaleTimeString()
+
+document.getElementById("datetime").innerText=
+`${day} | ${date} | ${time}`
+}
+
+updateGreeting()
+updateTime()
+setInterval(updateTime,1000)
+
+/* LOADER */
+function showLoader(){document.getElementById("loader").style.display="flex"}
+function hideLoader(){document.getElementById("loader").style.display="none"}
+
+/* FILE */
 let pdfBuffer,skuMap={},summary=[],serial=1,orderNumber=1
+
+const dropZone=document.getElementById("dropZone")
+const fileInput=document.getElementById("pdfUpload")
+
+dropZone.addEventListener("click",()=>fileInput.click())
+
+fileInput.addEventListener("change",e=>{
+handleFile(e)
+dropZone.classList.add("uploaded")
+})
+
+dropZone.addEventListener("dragover",e=>{
+e.preventDefault()
+dropZone.classList.add("dragover")
+})
+
+dropZone.addEventListener("dragleave",()=>{
+dropZone.classList.remove("dragover")
+})
+
+dropZone.addEventListener("drop",e=>{
+e.preventDefault()
+dropZone.classList.remove("dragover")
+dropZone.classList.add("uploaded")
+handleFile({target:{files:[e.dataTransfer.files[0]]}})
+})
+
+function handleFile(e){
+let file=e.target.files[0]
+if(!file)return
+
+showLoader()
+
+let reader=new FileReader()
+reader.onload=function(){
+pdfBuffer=this.result
+document.getElementById("status").innerText="PDF Loaded"
+document.getElementById("dropText").innerText="✔ "+file.name
+hideLoader()
+}
+reader.readAsArrayBuffer(file)
+}
+
+/* CSV */
+async function loadCSV(){
+let res=await fetch("sku_map.csv")
+let text=res?await res.text():""
+text.split("\n").slice(1).forEach(r=>{
+let c=r.split(",")
+if(c.length>=2){
+if(!skuMap[c[0].trim()]) skuMap[c[0].trim()]=[]
+skuMap[c[0].trim()].push(c[1].trim())
+}
+})
+}
+loadCSV()
 
 /* AMAZON */
 async function processPDF(){
@@ -228,16 +375,14 @@ const normalFont=await newPdf.embedFont(PDFLib.StandardFonts.Helvetica)
 const boldFont=await newPdf.embedFont(PDFLib.StandardFonts.HelveticaBold)
 
 for(let i=1;i<=pdf.numPages;i++){
-
 const page=await pdf.getPage(i)
 const text=(await page.getTextContent()).items.map(i=>i.str).join(" ")
 
-// ✅ ORDER ID EXTRACT
+// 🔥 ORDER ID EXTRACT
 let orderIdMatch = text.match(/\d{3}-\d{7}-\d{7}/)
 let orderId = orderIdMatch ? orderIdMatch[0] : ""
 
 if(!text.includes("Tax Invoice")){
-
 if(i>=pdf.numPages) continue
 
 const invoice=await pdf.getPage(i+1)
@@ -251,7 +396,6 @@ let qty=[...invText.matchAll(/₹[\d\.]+\s+(\d+)\s+₹/g)]
 let items=[]
 
 for(let k=0;k<sku.length;k++){
-
 let s=sku[k][1]
 let q=qty[k]?parseInt(qty[k][1]):1
 
@@ -267,7 +411,6 @@ let pcs=pack*q
 
 items.push({name:rep.join(", "),qty:q,pcs:pcs})
 
-// ✅ SUMMARY FIXED
 summary.push({
 order:k==0?orderNumber:"",
 orderId: orderId,
@@ -277,8 +420,8 @@ replacement:rep.join(", "),
 qty:q,
 pcs:pcs
 })
-
 }
+
 
 orderNumber++
 
@@ -288,7 +431,6 @@ newPdf.addPage(p)
 let pageNew=newPdf.getPages().pop()
 
 for(let j=0;j<items.length;j++){
-
 let y=190-(j*14)
 
 let t1=items[j].name+" ×"+items[j].qty+"      "
@@ -304,9 +446,7 @@ y:y,
 size:12,
 font:boldFont
 })
-
 }
-
 }
 }
 
@@ -315,21 +455,32 @@ setTimeout(()=>{win.print()},500)
 window.onfocus=function(){hideLoader();window.onfocus=null}
 }
 
+/* FLIPKART */
+async function processFlipkart(){
+if(!pdfBuffer){alert("Upload PDF first");return}
+
+showLoader()
+
+const pdf=await pdfjsLib.getDocument({data:pdfBuffer}).promise
+const newPdf=await PDFLib.PDFDocument.create()
+const originalPdf=await PDFLib.PDFDocument.load(pdfBuffer)
+
+for(let i=0;i<pdf.numPages;i++){
+const [p]=await newPdf.copyPages(originalPdf,[i])
+const {height}=p.getSize()
+p.setCropBox(185,height-385,410-185,385-25)
+newPdf.addPage(p)
+}
+
+let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()],{type:"application/pdf"})))
+setTimeout(()=>{win.print()},500)
+window.onfocus=function(){hideLoader();window.onfocus=null}
+}
 
 /* EXCEL */
 function downloadSummary(){
 
-let data = [[
-"Order No",
-"Order ID",
-"S.No",
-"SKU",
-"Replacement",
-"Qty",
-"Total PCS",
-"Category",
-"Total"
-]]
+let data = [["Order No","Order ID","S.No","SKU","Replacement","Qty","Total PCS","Category","Total"]]
 
 // 🔥 CATEGORY LIST
 const categories = ["SQ","BALL","CR","RH","HEART","4COM","3COM","MAT","GLOVES"]
@@ -351,37 +502,39 @@ r.replacement,
 r.qty,
 r.pcs
 ])
-})
 
 // 🔥 RESET
 for(let key in categoryCount){
 categoryCount[key] = 0
 }
 
-// 🔥 MAIN LOGIC
+// 🔥 MAIN LOGIC (FIXED)
 summary.forEach(r=>{
 
 if(!r.replacement) return
 
 let qty = Number(r.qty)
 
+// 👉 SPLIT multiple replacements
 let reps = r.replacement.toUpperCase().split(",")
 
 reps.forEach(rep=>{
 
 rep = rep.trim()
 
+// 👉 last number
 let match = rep.match(/-(\d+)\s*$/)
 let totalPieces = match ? parseInt(match[1]) : 1
 
+// 👉 detect categories with weight
 let found = {}
 
-// BALL
+// BALL special
 if(rep.includes("BALL") || rep.includes("FBALL") || rep.includes("BBALL")){
 found["BALL"] = 1
 }
 
-// OTHERS
+// other categories
 categories.forEach(cat=>{
 
 if(cat === "BALL") return
@@ -404,18 +557,21 @@ found[cat] = weight
 
 })
 
-// APPLY
+// 👉 APPLY LOGIC
 let totalWeight = Object.values(found).reduce((a,b)=>a+b,0)
 
+// ✅ single category
 if(Object.keys(found).length === 1){
 let cat = Object.keys(found)[0]
 categoryCount[cat] += qty * totalPieces
 }
+
+// ✅ multiple category (EXACT no rounding)
 else if(totalWeight > 0){
 for(let cat in found){
 let weight = found[cat]
 let value = (weight / totalWeight) * totalPieces * qty
-categoryCount[cat] += value
+categoryCount[cat] += value   // ❌ no Math.round
 }
 }
 
@@ -423,15 +579,14 @@ categoryCount[cat] += value
 
 })
 
-// ✅ CATEGORY → H, TOTAL → I
+// 🔥 ADD CATEGORY TO SHEET
 categories.forEach((cat,i)=>{
 if(!data[i+1]) data[i+1] = []
-
 data[i+1][7] = cat
 data[i+1][8] = categoryCount[cat]
 })
 
-// EXPORT
+// 🔥 EXPORT
 let ws = XLSX.utils.aoa_to_sheet(data)
 let wb = XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(wb, ws, "Summary")
