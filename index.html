@@ -379,11 +379,27 @@ const page=await pdf.getPage(i)
 const text=(await page.getTextContent()).items.map(i=>i.str).join(" ")
 
 // 🔥 ORDER ID EXTRACT
-// 🔥 FIXED ORDER ID (handles broken text)
-let cleanText = text.replace(/\s+/g, "")
+// 🔥 ORDER ID FINAL (Label + Invoice fallback)
 
+// 👉 1. Try label page
+let cleanText = text.replace(/\s+/g, "")
 let orderIdMatch = cleanText.match(/\d{3}-?\d{7}-?\d{7}/)
 
+// 👉 2. If not found → try invoice page
+if(!orderIdMatch){
+
+let cleanInv = invText.replace(/\s+/g, "")
+
+// Amazon me "OrderNumber" ya "OrderID" ke paas hota hai
+let invMatch = cleanInv.match(/Order(?:ID|Number)[:\-]?\d{3}-?\d{7}-?\d{7}/i)
+
+if(invMatch){
+orderIdMatch = invMatch[0].match(/\d{3}-?\d{7}-?\d{7}/)
+}
+
+}
+
+// 👉 3. Final format fix
 let orderId = orderIdMatch 
 ? orderIdMatch[0].replace(/(\d{3})(\d{7})(\d{7})/, "$1-$2-$3")
 : ""
