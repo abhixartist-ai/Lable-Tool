@@ -379,8 +379,14 @@ const page=await pdf.getPage(i)
 const text=(await page.getTextContent()).items.map(i=>i.str).join(" ")
 
 // 🔥 ORDER ID EXTRACT
-let orderIdMatch = text.match(/\d{3}-\d{7}-\d{7}/)
-let orderId = orderIdMatch ? orderIdMatch[0] : ""
+// 🔥 FIXED ORDER ID (handles broken text)
+let cleanText = text.replace(/\s+/g, "")
+
+let orderIdMatch = cleanText.match(/\d{3}-?\d{7}-?\d{7}/)
+
+let orderId = orderIdMatch 
+? orderIdMatch[0].replace(/(\d{3})(\d{7})(\d{7})/, "$1-$2-$3")
+: ""
 
 if(!text.includes("Tax Invoice")){
 if(i>=pdf.numPages) continue
