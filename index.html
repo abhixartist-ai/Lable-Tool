@@ -420,7 +420,7 @@ replacement:rep.join(", "),
 qty:q,
 pcs:pcs
 })
-
+}
 
 orderNumber++
 
@@ -492,15 +492,7 @@ SQ:0, BALL:0, CR:0, RH:0, HEART:0,
 
 // 🔥 NORMAL DATA
 summary.forEach(r=>{
-data.push([
-r.order,
-r.orderId,
-r.sno,
-r.sku,
-r.replacement,
-r.qty,
-r.pcs
-])
+data.push([r.order,r.orderId,r.sno,r.sku,r.replacement,r.qty,r.pcs])
 })
 
 // 🔥 RESET
