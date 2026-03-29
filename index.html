@@ -389,6 +389,26 @@ let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()],{type:"ap
 setTimeout(()=>{win.print()},500)
 window.onfocus=function(){hideLoader();window.onfocus=null}
 }
+
+function downloadSummary(){
+
+if(summary.length === 0){
+alert("Pehle Amazon Label process karo")
+return
+}
+
+let data = [["Order No","Order ID","S.No","SKU","Replacement","Qty","Total PCS"]]
+
+summary.forEach(r=>{
+data.push([r.order,r.orderId,r.sno,r.sku,r.replacement,r.qty,r.pcs])
+})
+
+let ws = XLSX.utils.aoa_to_sheet(data)
+let wb = XLSX.utils.book_new()
+XLSX.utils.book_append_sheet(wb, ws, "Summary")
+
+XLSX.writeFile(wb, "Amazon_summary.xlsx")
+}
 </script>
 
 </body>
