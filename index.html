@@ -500,7 +500,7 @@ summary.forEach(r=>{
 
 if(!r.replacement) return
 
-let rep = r.replacement.toUpperCase()
+let reps = r.replacement.toUpperCase().split(",")
 let qty = Number(r.qty)
 
 // last number
