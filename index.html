@@ -1,9 +1,22 @@
-<!DOCTYPE html><html>
-<head><title>Label Tool Pro</title>
-<link rel="icon" href="favicon.png"><meta name="viewport" content="width=device-width, initial-scale=1.0"><script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script><script>
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Label Tool Pro</title>
+<link rel="icon" href="favicon.png">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
 pdfjsLib.GlobalWorkerOptions.workerSrc =
 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-</script><script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script><style>
+</script>
+
+<script src="https://unpkg.com/pdf-lib/dist/pdf-lib.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
 
 /* 🔥 IMPORTANT FIX */
 *, *::before, *::after{
@@ -189,26 +202,55 @@ animation:spin 1s linear infinite;
 100%{transform:rotate(360deg)}
 }
 
-</style></head><body><!-- LOGIN --><div id="loginBox">
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginBox">
   <div class="login-card">
     <h2 class="normal-heading">🔐 Enter Password</h2>
     <input type="password" id="passInput" placeholder="Enter password">
     <button class="btn" onclick="checkPassword()">Enter</button>
     <p id="errorMsg" style="color:red;"></p>
   </div>
-</div><div class="container"><!-- GREETING --><div class="card">
+</div>
+
+<div class="container">
+
+<!-- GREETING -->
+<div class="card">
   <h2 class="gradient-animate" id="greeting">Loading...</h2>
   <div class="datetime" id="datetime"></div>
-</div><!-- TOOL --><div class="card">  <h2 class="normal-heading">
+</div>
+
+<!-- TOOL -->
+<div class="card">
+
+  <h2 class="normal-heading">
   🚀 Amazon / Flipkart Label Tool
-  </h2>  <div id="dropZone">
+  </h2>
+
+  <div id="dropZone">
     <input type="file" id="pdfUpload" accept="application/pdf" hidden>
     <span id="dropText">Click or Drag & Drop PDF</span>
-  </div>  <p id="status"></p><button class="btn" onclick="processPDF()">Print Amazon Labels</button>
-<button class="btn" onclick="processFlipkart()">Print Flipkart Labels</button>
-<button class="btn" onclick="downloadSummary()">Download Summary Excel</button>
+  </div>
 
-</div></div><!-- LOADER --><div id="loader"><div></div></div><script>
+  <p id="status"></p>
+
+  <button class="btn" onclick="processPDF()">Print Amazon Labels</button>
+  <button class="btn" onclick="processFlipkart()">Print Flipkart Labels</button>
+  <button class="btn" onclick="downloadSummary()">Download Summary Excel</button>
+
+</div>
+
+</div>
+
+<!-- LOADER -->
+<div id="loader"><div></div></div>
+
+<script>
 
 /* DATE */
 let d=new Date()
@@ -260,7 +302,7 @@ function showLoader(){document.getElementById("loader").style.display="flex"}
 function hideLoader(){document.getElementById("loader").style.display="none"}
 
 /* FILE */
-let pdfBuffer,skuMap={},summary=[],serial=1,orderNumber=1,currentOrderId=""
+let pdfBuffer,skuMap={},summary=[],serial=1,orderNumber=1
 
 const dropZone=document.getElementById("dropZone")
 const fileInput=document.getElementById("pdfUpload")
@@ -337,11 +379,6 @@ const page=await pdf.getPage(i)
 const text=(await page.getTextContent()).items.map(i=>i.str).join(" ")
 
 if(!text.includes("Tax Invoice")){
-
-// 🔥 ORDER ID EXTRACT
-let orderMatch = text.match(/\d{3}-\d{7}-\d{7}/)
-currentOrderId = orderMatch ? orderMatch[0] : ""
-
 if(i>=pdf.numPages) continue
 
 const invoice=await pdf.getPage(i+1)
@@ -349,7 +386,7 @@ const invText=(await invoice.getTextContent()).items.map(i=>i.str).join(" ")
 
 if(!invText.includes("Tax Invoice")) continue
 
-let sku=[...invText.matchAll(/\s*([A-Z0-9]+(?:-[A-Z0-9]+)+)\s*/g)]
+let sku=[...invText.matchAll(/\(\s*([A-Z0-9]+(?:-[A-Z0-9]+)+)\s*\)/g)]
 let qty=[...invText.matchAll(/₹[\d\.]+\s+(\d+)\s+₹/g)]
 
 let items=[]
@@ -372,7 +409,6 @@ items.push({name:rep.join(", "),qty:q,pcs:pcs})
 
 summary.push({
 order:k==0?orderNumber:"",
-orderId: currentOrderId,
 sno:serial++,
 sku:s,
 replacement:rep.join(", "),
@@ -438,43 +474,54 @@ window.onfocus=function(){hideLoader();window.onfocus=null}
 /* EXCEL */
 function downloadSummary(){
 
-let data = [["Order No","Order ID","S.No","SKU","Replacement","Qty","Total PCS","Category","Total"]]
+let data = [["Order No","S.No","SKU","Replacement","Qty","Total PCS","Category","Total"]]
 
+// 🔥 CATEGORY LIST
 const categories = ["SQ","BALL","CR","RH","HEART","4COM","3COM","MAT","GLOVES"]
 
+// 🔥 COUNT OBJECT
 let categoryCount = {
 SQ:0, BALL:0, CR:0, RH:0, HEART:0,
 "4COM":0, "3COM":0, MAT:0, GLOVES:0
 }
 
+// 🔥 NORMAL DATA
 summary.forEach(r=>{
-data.push([r.order,r.orderId,r.sno,r.sku,r.replacement,r.qty,r.pcs])
+data.push([r.order,r.sno,r.sku,r.replacement,r.qty,r.pcs])
 })
 
+// 🔥 RESET
 for(let key in categoryCount){
 categoryCount[key] = 0
 }
 
+// 🔥 MAIN LOGIC (FIXED)
 summary.forEach(r=>{
 
 if(!r.replacement) return
 
 let qty = Number(r.qty)
+
+// 👉 SPLIT multiple replacements
 let reps = r.replacement.toUpperCase().split(",")
 
 reps.forEach(rep=>{
 
 rep = rep.trim()
 
+// 👉 last number
 let match = rep.match(/-(\d+)\s*$/)
 let totalPieces = match ? parseInt(match[1]) : 1
 
+// 👉 detect categories with weight
 let found = {}
 
+// BALL special
 if(rep.includes("BALL") || rep.includes("FBALL") || rep.includes("BBALL")){
 found["BALL"] = 1
 }
 
+// other categories
 categories.forEach(cat=>{
 
 if(cat === "BALL") return
@@ -497,17 +544,21 @@ found[cat] = weight
 
 })
 
+// 👉 APPLY LOGIC
 let totalWeight = Object.values(found).reduce((a,b)=>a+b,0)
 
+// ✅ single category
 if(Object.keys(found).length === 1){
 let cat = Object.keys(found)[0]
 categoryCount[cat] += qty * totalPieces
 }
+
+// ✅ multiple category (EXACT no rounding)
 else if(totalWeight > 0){
 for(let cat in found){
 let weight = found[cat]
 let value = (weight / totalWeight) * totalPieces * qty
-categoryCount[cat] += value
+categoryCount[cat] += value   // ❌ no Math.round
 }
 }
 
@@ -515,12 +566,14 @@ categoryCount[cat] += value
 
 })
 
+// 🔥 ADD CATEGORY TO SHEET
 categories.forEach((cat,i)=>{
 if(!data[i+1]) data[i+1] = []
-data[i+1][7] = cat
-data[i+1][8] = categoryCount[cat]
+data[i+1][6] = cat
+data[i+1][7] = categoryCount[cat]
 })
 
+// 🔥 EXPORT
 let ws = XLSX.utils.aoa_to_sheet(data)
 let wb = XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(wb, ws, "Summary")
@@ -528,5 +581,7 @@ XLSX.utils.book_append_sheet(wb, ws, "Summary")
 XLSX.writeFile(wb, "Amazon_summary_"+today+".xlsx")
 }
 
-</script></body>
+</script>
+
+</body>
 </html>
