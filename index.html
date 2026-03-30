@@ -248,6 +248,9 @@ animation:spin 1s linear infinite;
   color: #fff;
   display: block;
   transition: 0.3s;
+  white-space: nowrap;      /* Prevent text wrap */
+  overflow: hidden;         /* Hide overflow */
+  text-overflow: ellipsis;  /* Optional: show ... if too long */
 }
 .menu a:hover{
   background-color: #333;
