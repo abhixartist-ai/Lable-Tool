@@ -202,10 +202,104 @@ animation:spin 1s linear infinite;
 100%{transform:rotate(360deg)}
 }
 
+/* ================= HAMBURGER MENU ================= */
+
+.menu-btn{
+width:35px;
+height:25px;
+position:fixed;
+top:15px;
+left:15px;
+cursor:pointer;
+z-index:10001;
+}
+
+.menu-btn span{
+display:block;
+height:4px;
+width:100%;
+background:white;
+margin:5px 0;
+border-radius:2px;
+transition:0.4s;
+}
+
+.menu-btn.active span:nth-child(1){
+transform:rotate(45deg) translate(5px,5px);
+}
+
+.menu-btn.active span:nth-child(2){
+opacity:0;
+}
+
+.menu-btn.active span:nth-child(3){
+transform:rotate(-45deg) translate(6px,-6px);
+}
+
+.side-menu{
+position:fixed;
+top:0;
+left:-260px;
+width:260px;
+height:100%;
+background:rgba(20,20,40,0.95);
+backdrop-filter:blur(10px);
+padding-top:70px;
+transition:0.4s;
+z-index:10000;
+}
+
+.side-menu a{
+display:block;
+padding:15px 20px;
+color:white;
+text-decoration:none;
+font-size:18px;
+}
+
+.side-menu a:hover{
+background:rgba(255,255,255,0.1);
+}
+
+.side-menu.active{
+left:0;
+}
+
+.overlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.4);
+display:none;
+z-index:9998;
+}
+
+.overlay.active{
+display:block;
+}
+
 </style>
 </head>
 
 <body>
+
+<!-- HAMBURGER MENU -->
+<div class="menu-btn" id="menuBtn">
+  <span></span>
+  <span></span>
+  <span></span>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<div class="side-menu" id="sideMenu">
+  <a href="#">🏠 Home</a>
+  <a href="#">📄 Orders</a>
+  <a href="#">📊 Reports</a>
+  <a href="#">⚙️ Settings</a>
+</div>
 
 <!-- LOGIN -->
 <div id="loginBox">
@@ -251,6 +345,25 @@ animation:spin 1s linear infinite;
 <div id="loader"><div></div></div>
 
 <script>
+
+/* HAMBURGER MENU */
+const menuBtn = document.getElementById("menuBtn");
+const sideMenu = document.getElementById("sideMenu");
+const overlay = document.getElementById("overlay");
+
+menuBtn.addEventListener("click", () => {
+  menuBtn.classList.toggle("active");
+  sideMenu.classList.toggle("active");
+  overlay.classList.toggle("active");
+});
+
+overlay.addEventListener("click", () => {
+  menuBtn.classList.remove("active");
+  sideMenu.classList.remove("active");
+  overlay.classList.remove("active");
+});
+
+/* ===== REST OF YOUR ORIGINAL JS (UNCHANGED) ===== */
 
 /* DATE */
 let d=new Date()
@@ -476,52 +589,41 @@ function downloadSummary(){
 
 let data = [["Order No","S.No","SKU","Replacement","Qty","Total PCS","Category","Total"]]
 
-// 🔥 CATEGORY LIST
 const categories = ["SQ","BALL","CR","RH","HEART","4COM","3COM","MAT","GLOVES"]
 
-// 🔥 COUNT OBJECT
 let categoryCount = {
 SQ:0, BALL:0, CR:0, RH:0, HEART:0,
 "4COM":0, "3COM":0, MAT:0, GLOVES:0
 }
 
-// 🔥 NORMAL DATA
 summary.forEach(r=>{
 data.push([r.order,r.sno,r.sku,r.replacement,r.qty,r.pcs])
 })
 
-// 🔥 RESET
 for(let key in categoryCount){
 categoryCount[key] = 0
 }
 
-// 🔥 MAIN LOGIC (FIXED)
 summary.forEach(r=>{
 
 if(!r.replacement) return
 
 let qty = Number(r.qty)
-
-// 👉 SPLIT multiple replacements
 let reps = r.replacement.toUpperCase().split(",")
 
 reps.forEach(rep=>{
 
 rep = rep.trim()
 
-// 👉 last number
 let match = rep.match(/-(\d+)\s*$/)
 let totalPieces = match ? parseInt(match[1]) : 1
 
-// 👉 detect categories with weight
 let found = {}
 
-// BALL special
 if(rep.includes("BALL") || rep.includes("FBALL") || rep.includes("BBALL")){
 found["BALL"] = 1
 }
 
-// other categories
 categories.forEach(cat=>{
 
 if(cat === "BALL") return
@@ -544,21 +646,18 @@ found[cat] = weight
 
 })
 
-// 👉 APPLY LOGIC
 let totalWeight = Object.values(found).reduce((a,b)=>a+b,0)
 
-// ✅ single category
 if(Object.keys(found).length === 1){
 let cat = Object.keys(found)[0]
 categoryCount[cat] += qty * totalPieces
 }
 
-// ✅ multiple category (EXACT no rounding)
 else if(totalWeight > 0){
 for(let cat in found){
 let weight = found[cat]
 let value = (weight / totalWeight) * totalPieces * qty
-categoryCount[cat] += value   // ❌ no Math.round
+categoryCount[cat] += value
 }
 }
 
@@ -566,14 +665,12 @@ categoryCount[cat] += value   // ❌ no Math.round
 
 })
 
-// 🔥 ADD CATEGORY TO SHEET
 categories.forEach((cat,i)=>{
 if(!data[i+1]) data[i+1] = []
 data[i+1][6] = cat
 data[i+1][7] = categoryCount[cat]
 })
 
-// 🔥 EXPORT
 let ws = XLSX.utils.aoa_to_sheet(data)
 let wb = XLSX.utils.book_new()
 XLSX.utils.book_append_sheet(wb, ws, "Summary")
