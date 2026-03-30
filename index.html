@@ -296,7 +296,7 @@ display:block;
 
 <div class="side-menu" id="sideMenu">
   <a href="#">🏠 Home</a>
-  <a href="#">📄 Orders</a>
+  <a href="oder_id/index.html">📄 Orders</a>
   <a href="#">📊 Reports</a>
   <a href="#">⚙️ Settings</a>
 </div>
@@ -361,6 +361,13 @@ overlay.addEventListener("click", () => {
   menuBtn.classList.remove("active");
   sideMenu.classList.remove("active");
   overlay.classList.remove("active");
+});
+document.querySelectorAll(".side-menu a").forEach(link=>{
+  link.addEventListener("click", ()=>{
+    menuBtn.classList.remove("active");
+    sideMenu.classList.remove("active");
+    overlay.classList.remove("active");
+  });
 });
 
 /* ===== REST OF YOUR ORIGINAL JS (UNCHANGED) ===== */
