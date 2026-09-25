@@ -241,6 +241,7 @@ animation:spin 1s linear infinite;
 
   <button class="btn" onclick="processPDF()">Print Amazon Labels</button>
   <button class="btn" onclick="processFlipkart()">Print Flipkart Labels</button>
+  <button class="btn" onclick="processMeesho()">Print Meesho Labels</button>
   <button class="btn" onclick="downloadSummary()">Download Summary Excel</button>
 
 </div>
@@ -360,697 +361,109 @@ skuMap[c[0].trim()].push(c[1].trim())
 }
 loadCSV()
 
-/* =========================================================
-   AMAZON PROCESS PDF - FINAL MULTI-PAGE FIX
-   Handles:
-   Label + Invoice 1/1
-   Label + Invoice 1/2 + Invoice 2/2
-   Label + Invoice 1/3 + Invoice 2/3 + Invoice 3/3
-   ========================================================= */
-
+/* AMAZON */
 async function processPDF(){
+if(!pdfBuffer){alert("Upload PDF first");return}
 
-    if(!pdfBuffer){
-        alert("Upload PDF first");
-        return;
-    }
+showLoader()
+summary=[];serial=1;orderNumber=1
 
-    showLoader();
+const pdf=await pdfjsLib.getDocument({data:pdfBuffer}).promise
+const newPdf=await PDFLib.PDFDocument.create()
+const originalPdf=await PDFLib.PDFDocument.load(pdfBuffer)
 
-    try{
+const normalFont=await newPdf.embedFont(PDFLib.StandardFonts.Helvetica)
+const boldFont=await newPdf.embedFont(PDFLib.StandardFonts.HelveticaBold)
 
-        /* ---------------------------------------------
-           RESET
-        --------------------------------------------- */
+for(let i=1;i<=pdf.numPages;i++){
+const page=await pdf.getPage(i)
+const text=(await page.getTextContent()).items.map(i=>i.str).join(" ")
 
-        summary = [];
-        serial = 1;
-        orderNumber = 1;
+if(!text.includes("Tax Invoice")){
+if(i>=pdf.numPages) continue
 
+const invoice=await pdf.getPage(i+1)
+const invText=(await invoice.getTextContent()).items.map(i=>i.str).join(" ")
 
-        /* ---------------------------------------------
-           LOAD PDF
-        --------------------------------------------- */
+if(!invText.includes("Tax Invoice")) continue
 
-        const pdf = await pdfjsLib
-            .getDocument({data:pdfBuffer})
-            .promise;
+let sku=[...invText.matchAll(/\(\s*([A-Z0-9]+(?:-[A-Z0-9]+)+)\s*\)/g)]
+let qty=[...invText.matchAll(/₹[\d\.]+\s+(\d+)\s+₹/g)]
 
-        const newPdf = await PDFLib.PDFDocument.create();
+// ✅ PRICE MATCH (FINAL TOTAL PER SKU)
+let priceMatch = [...invText.matchAll(/₹\s*([\d,]+\.\d{2})/g)]
 
-        const originalPdf =
-            await PDFLib.PDFDocument.load(pdfBuffer);
+// ✅ ORDER INFO
+let orderMatch = invText.match(/Order\s*(ID|Number)[:\s]*([A-Z0-9\-]+)/i)
+let orderId = orderMatch ? orderMatch[2] : ""
 
+let dateMatch = invText.match(/Order\s*Date[:\s]*([\d]{1,2}\.[\d]{1,2}\.[\d]{4})/i)
+let orderDate = dateMatch ? dateMatch[1] : ""
 
-        /* ---------------------------------------------
-           FONTS
-        --------------------------------------------- */
+let items=[]
 
-        const normalFont =
-            await newPdf.embedFont(
-                PDFLib.StandardFonts.Helvetica
-            );
+for(let k=0;k<sku.length;k++){
+let s=sku[k][1]
+let q=qty[k]?parseInt(qty[k][1]):1
 
-        const boldFont =
-            await newPdf.embedFont(
-                PDFLib.StandardFonts.HelveticaBold
-            );
+let rep=skuMap[s]||[s]
 
+let pack=0
+rep.forEach(r=>{
+let m=r.match(/(\d+)$/)
+pack+=m?parseInt(m[1]):1
+})
 
-        /* ---------------------------------------------
-           READ ALL PAGE TEXT ONCE
-        --------------------------------------------- */
+let pcs=pack*q
 
-        let pageTexts = [];
+let itemTotal = priceMatch[(k*4)+3] ? priceMatch[(k*4)+3][1].replace(/,/g,"") : 0
 
-        for(let p=1; p<=pdf.numPages; p++){
+items.push({name:rep.join(", "),qty:q,pcs:pcs})
 
-            const page = await pdf.getPage(p);
-
-            const content =
-                await page.getTextContent();
-
-            const text =
-                content.items
-                .map(item => item.str)
-                .join(" ")
-                .replace(/\s+/g," ")
-                .trim();
-
-            pageTexts.push(text);
-        }
-
-
-        /* ---------------------------------------------
-           HELPER:
-           GET "PAGE X OF Y"
-           
-           Examples:
-           Page 1 of 2
-           Page 2 of 2
-           Page 1 of 1
-        --------------------------------------------- */
-
-        function getInvoicePageInfo(text){
-
-            const match =
-                text.match(
-                    /Page\s*(\d+)\s*of\s*(\d+)/i
-                );
-
-            if(!match){
-                return null;
-            }
-
-            return {
-                current: parseInt(match[1]),
-                total: parseInt(match[2])
-            };
-        }
-
-
-        /* ---------------------------------------------
-           FIND ORDERS
-        --------------------------------------------- */
-
-        let i = 0;
-
-        while(i < pdf.numPages){
-
-            let currentText = pageTexts[i];
-
-            /*
-               Amazon label page normally does NOT contain
-               "Tax Invoice".
-
-               The next page should be an invoice.
-            */
-
-            if(
-                !currentText.includes("Tax Invoice") &&
-                i + 1 < pdf.numPages &&
-                pageTexts[i + 1].includes("Tax Invoice")
-            ){
-
-                /* -------------------------------------
-                   THIS IS LABEL PAGE
-                ------------------------------------- */
-
-                const labelPageIndex = i;
-
-                const firstInvoiceIndex = i + 1;
-
-                const firstInvoiceText =
-                    pageTexts[firstInvoiceIndex];
-
-
-                /* -------------------------------------
-                   READ PAGE X OF Y
-                ------------------------------------- */
-
-                const pageInfo =
-                    getInvoicePageInfo(
-                        firstInvoiceText
-                    );
-
-
-                let invoicePages = [];
-
-
-                /* -------------------------------------
-                   CASE 1:
-                   PAGE NUMBER FOUND
-
-                   Example:
-                   Page 1 of 2
-
-                   Then collect exactly:
-                   Page 1 of 2
-                   Page 2 of 2
-                ------------------------------------- */
-
-                if(pageInfo){
-
-                    const totalPages =
-                        pageInfo.total;
-
-                    /*
-                       Start from first invoice page
-                    */
-
-                    for(
-                        let x = 0;
-                        x < totalPages;
-                        x++
-                    ){
-
-                        const invoiceIndex =
-                            firstInvoiceIndex + x;
-
-                        if(
-                            invoiceIndex >= pdf.numPages
-                        ){
-                            break;
-                        }
-
-                        /*
-                           Make sure this page is actually
-                           an invoice page.
-                        */
-
-                        if(
-                            pageTexts[invoiceIndex]
-                            .includes("Tax Invoice")
-                        ){
-
-                            invoicePages.push(
-                                invoiceIndex
-                            );
-
-                        }
-                    }
-
-                }
-
-
-                /* -------------------------------------
-                   FALLBACK
-
-                   If PAGE X OF Y is not detected,
-                   at least process the first invoice page.
-                ------------------------------------- */
-
-                if(invoicePages.length === 0){
-
-                    invoicePages.push(
-                        firstInvoiceIndex
-                    );
-
-                }
-
-
-                /* -------------------------------------
-                   COMBINE TEXT FROM ALL INVOICE PAGES
-                ------------------------------------- */
-
-                let invText = "";
-
-                invoicePages.forEach(
-                    invoiceIndex => {
-
-                        invText +=
-                            " " +
-                            pageTexts[invoiceIndex];
-
-                    }
-                );
-
-                invText =
-                    invText
-                    .replace(/\s+/g," ")
-                    .trim();
-
-
-                /* -------------------------------------
-                   ORDER ID
-                ------------------------------------- */
-
-                let orderMatch =
-                    invText.match(
-                        /Order\s*(ID|Number)\s*[:\s]*([A-Z0-9\-]+)/i
-                    );
-
-                let orderId =
-                    orderMatch
-                    ? orderMatch[2]
-                    : "";
-
-
-                /* -------------------------------------
-                   ORDER DATE
-                ------------------------------------- */
-
-                let dateMatch =
-                    invText.match(
-                        /Order\s*Date\s*[:\s]*([\d]{1,2}\.[\d]{1,2}\.[\d]{4})/i
-                    );
-
-                let orderDate =
-                    dateMatch
-                    ? dateMatch[1]
-                    : "";
-
-
-                /* -------------------------------------
-                   SKU EXTRACTION
-
-                   Example:
-                   ( Q2-HNH7-FUQ7 )
-                   ( NH-5VZC-DXW7 )
-                   ( PINK-CR-01 )
-                ------------------------------------- */
-
-                let sku = [
-                    ...invText.matchAll(
-                        /\(\s*([A-Z0-9]+(?:-[A-Z0-9]+)+)\s*\)/g
-                    )
-                ];
-
-
-                /* -------------------------------------
-                   QUANTITY
-
-                   Example:
-                   ₹360.62 -₹18.03 3 ₹1,027.77
-                ------------------------------------- */
-
-                let qty = [
-                    ...invText.matchAll(
-                        /₹[\d,.]+\s+-?₹?[\d,.]+\s+(\d+)\s+₹/g
-                    )
-                ];
-
-
-                /*
-                   FALLBACK quantity pattern
-                */
-
-                if(qty.length < sku.length){
-
-                    qty = [
-                        ...invText.matchAll(
-                            /₹[\d,.]+\s+(\d+)\s+₹/g
-                        )
-                    ];
-
-                }
-
-
-                /* -------------------------------------
-                   PRICE
-                ------------------------------------- */
-
-                let priceMatch = [
-                    ...invText.matchAll(
-                        /₹\s*([\d,]+\.\d{2})/g
-                    )
-                ];
-
-
-                /* -------------------------------------
-                   ITEMS FOR LABEL
-                ------------------------------------- */
-
-                let items = [];
-
-
-                /* -------------------------------------
-                   PROCESS EACH SKU
-                ------------------------------------- */
-
-                for(let k=0; k<sku.length; k++){
-
-                    let s = sku[k][1];
-
-
-                    /* ---------------------------------
-                       QUANTITY
-                    --------------------------------- */
-
-                    let q =
-                        qty[k]
-                        ? parseInt(qty[k][1])
-                        : 1;
-
-
-                    /*
-                       If quantity is 0,
-                       treat it as 1
-                    */
-
-                    if(!q || q <= 0){
-                        q = 1;
-                    }
-
-
-                    /* ---------------------------------
-                       SKU MAP
-                    --------------------------------- */
-
-                    let rep =
-                        skuMap[s] || [s];
-
-
-                    /* ---------------------------------
-                       PACK COUNT
-                    --------------------------------- */
-
-                    let pack = 0;
-
-                    rep.forEach(r => {
-
-                        let m =
-                            r.match(/(\d+)$/);
-
-                        pack +=
-                            m
-                            ? parseInt(m[1])
-                            : 1;
-
-                    });
-
-
-                    /* ---------------------------------
-                       TOTAL PCS
-                    --------------------------------- */
-
-                    let pcs =
-                        pack * q;
-
-
-                    /* ---------------------------------
-                       ITEM TOTAL
-
-                       Keep existing price logic
-                    --------------------------------- */
-
-                    let itemTotal =
-                        priceMatch[(k * 4) + 3]
-                        ? priceMatch[(k * 4) + 3][1]
-                            .replace(/,/g,"")
-                        : 0;
-
-
-                    /* ---------------------------------
-                       ADD TO LABEL ITEMS
-                    --------------------------------- */
-
-                    items.push({
-
-                        name:
-                            rep.join(", "),
-
-                        qty:
-                            q,
-
-                        pcs:
-                            pcs
-
-                    });
-
-
-                    /* ---------------------------------
-                       ADD TO SUMMARY
-                    --------------------------------- */
-
-                    summary.push({
-
-                        order:
-                            k === 0
-                            ? orderNumber
-                            : "",
-
-                        orderId:
-                            k === 0
-                            ? orderId
-                            : "",
-
-                        orderDate:
-                            k === 0
-                            ? orderDate
-                            : "",
-
-                        sno:
-                            serial++,
-
-                        sku:
-                            s,
-
-                        replacement:
-                            rep.join(", "),
-
-                        qty:
-                            q,
-
-                        pcs:
-                            pcs,
-
-                        itemTotal:
-                            itemTotal
-
-                    });
-
-                }
-
-
-                /* -------------------------------------
-                   COPY ONLY LABEL PAGE
-                ------------------------------------- */
-
-                const [labelPage] =
-                    await newPdf.copyPages(
-                        originalPdf,
-                        [labelPageIndex]
-                    );
-
-                newPdf.addPage(labelPage);
-
-
-                let pageNew =
-                    newPdf
-                    .getPages()
-                    .pop();
-
-
-                /* -------------------------------------
-                   WRITE ALL ITEMS ON LABEL
-                ------------------------------------- */
-
-                for(
-                    let x = 0;
-                    x < items.length;
-                    x++
-                ){
-
-                    /*
-                       Start position
-                    */
-
-                    let y =
-                        190 - (x * 14);
-
-
-                    let t1 =
-                        items[x].name +
-                        " ×" +
-                        items[x].qty +
-                        "      ";
-
-
-                    let t2 =
-                        "(" +
-                        items[x].pcs +
-                        ")";
-
-
-                    /* ---------------------------------
-                       ITEM NAME
-                    --------------------------------- */
-
-                    pageNew.drawText(
-                        t1,
-                        {
-                            x:50,
-                            y:y,
-                            size:12,
-                            font:normalFont
-                        }
-                    );
-
-
-                    /* ---------------------------------
-                       CALCULATE TEXT WIDTH
-                    --------------------------------- */
-
-                    let width =
-                        normalFont
-                        .widthOfTextAtSize(
-                            t1,
-                            12
-                        );
-
-
-                    /* ---------------------------------
-                       PCS
-                    --------------------------------- */
-
-                    pageNew.drawText(
-                        t2,
-                        {
-                            x:
-                                50 +
-                                width +
-                                5,
-
-                            y:y,
-
-                            size:12,
-
-                            font:
-                                boldFont
-                        }
-                    );
-
-                }
-
-
-                /* -------------------------------------
-                   MOVE TO NEXT ORDER
-
-                   Example:
-
-                   Page 1 Label
-                   Page 2 Invoice 1/2
-                   Page 3 Invoice 2/2
-                   Page 4 Next Label
-
-                   i becomes Page 4
-                ------------------------------------- */
-
-                i =
-                    firstInvoiceIndex +
-                    invoicePages.length;
-
-
-                orderNumber++;
-
-            }
-
-            else{
-
-                /*
-                   Not a label/invoice start.
-                   Move to next page.
-                */
-
-                i++;
-
-            }
-
-        }
-
-
-        /* ---------------------------------------------
-           SAVE NEW PDF
-        --------------------------------------------- */
-
-        const pdfBytes =
-            await newPdf.save();
-
-
-        /* ---------------------------------------------
-           OPEN PDF
-        --------------------------------------------- */
-
-        let win =
-            window.open(
-                URL.createObjectURL(
-                    new Blob(
-                        [pdfBytes],
-                        {
-                            type:
-                                "application/pdf"
-                        }
-                    )
-                )
-            );
-
-
-        /* ---------------------------------------------
-           PRINT
-        --------------------------------------------- */
-
-        setTimeout(() => {
-
-            if(win){
-                win.print();
-            }
-
-        },500);
-
-
-        /* ---------------------------------------------
-           HIDE LOADER AFTER PRINT WINDOW RETURNS
-        --------------------------------------------- */
-
-        window.onfocus = function(){
-
-            hideLoader();
-
-            window.onfocus = null;
-
-        };
-
-    }
-
-    catch(error){
-
-        console.error(
-            "Amazon Processing Error:",
-            error
-        );
-
-        hideLoader();
-
-        alert(
-            "Amazon PDF processing error:\n\n" +
-            error.message
-        );
-
-    }
-
+summary.push({
+order:k==0?orderNumber:"",
+orderId:k==0?orderId:"",
+orderDate:k==0?orderDate:"",
+sno:serial++,
+sku:s,
+replacement:rep.join(", "),
+qty:q,
+pcs:pcs,
+itemTotal:itemTotal
+})
 }
 
+orderNumber++
+
+const [p]=await newPdf.copyPages(originalPdf,[i-1])
+newPdf.addPage(p)
+
+let pageNew=newPdf.getPages().pop()
+
+for(let j=0;j<items.length;j++){
+let y=190-(j*14)
+
+let t1=items[j].name+" ×"+items[j].qty+"      "
+let t2="("+items[j].pcs+")"
+
+pageNew.drawText(t1,{x:50,y:y,size:12,font:normalFont})
+
+let width=normalFont.widthOfTextAtSize(t1,12)
+
+pageNew.drawText(t2,{
+x:50+width+5,
+y:y,
+size:12,
+font:boldFont
+})
+}
+}
+}
+
+let win=window.open(URL.createObjectURL(new Blob([await newPdf.save()],{type:"application/pdf"})))
+setTimeout(()=>{win.print()},500)
+window.onfocus=function(){hideLoader();window.onfocus=null}
+}
 
 /* FLIPKART */
 async function processFlipkart(){
@@ -1074,18 +487,76 @@ setTimeout(()=>{win.print()},500)
 window.onfocus=function(){hideLoader();window.onfocus=null}
 }
 
+/* MEESHO */
+async function processMeesho(){
+
+if(!pdfBuffer){
+alert("Upload PDF first");
+return;
+}
+
+showLoader();
+
+const pdf=await pdfjsLib.getDocument({data:pdfBuffer}).promise;
+
+const newPdf=await PDFLib.PDFDocument.create();
+
+const originalPdf=await PDFLib.PDFDocument.load(pdfBuffer);
+
+for(let i=0;i<pdf.numPages;i++){
+
+const [p]=await newPdf.copyPages(originalPdf,[i]);
+
+const {width,height}=p.getSize();
+
+/*
+Keep full width
+Remove only bottom 489 pt
+*/
+
+p.setCropBox(
+0,
+489,
+width,
+height-489
+);
+
+newPdf.addPage(p);
+
+}
+
+let win=window.open(
+URL.createObjectURL(
+new Blob(
+[await newPdf.save()],
+{type:"application/pdf"}
+)
+)
+);
+
+setTimeout(()=>{
+win.print();
+},500);
+
+window.onfocus=function(){
+hideLoader();
+window.onfocus=null;
+}
+
+}
+
 /* EXCEL */
 function downloadSummary(){
 
 let data = [["Order No","Order Date","Order ID","S.No","SKU","Replacement","Qty","Total PCS","Item Total","Category","Total","10:00 am","12:00 pm","1:00 pm","1:30 pm"]]
 
 // 🔥 CATEGORY LIST
-const categories = ["SQ","BALL","CR","RH","HEART","4COM","3COM","MAT","GLOVES","LID","TEETHER","POPIT"]
+const categories = ["SQ","BALL","CR","RH","HEART","4COM","3COM","MAT","GLOVES"]
 
 // 🔥 COUNT OBJECT
 let categoryCount = {
 SQ:0, BALL:0, CR:0, RH:0, HEART:0,
-"4COM":0, "3COM":0, MAT:0, GLOVES:0, LID:0, TEETHER:0, POPIT:0
+"4COM":0, "3COM":0, MAT:0, GLOVES:0
 }
 
 // 🔥 NORMAL DATA
@@ -1129,32 +600,8 @@ let totalPieces = match ? parseInt(match[1]) : 1
 // 👉 detect categories with weight
 let found = {}
 
-// TEETHER special
-if(rep.includes("HAND") ||
-   rep.includes("ELI") ||
-   rep.includes("DOG")){
-   found["TEETHER"] = 1
-}
-
-// LID special
-if(rep.includes("LID")){
-    found["LID"] = 1
-}
-
-// POPIT special
-if(rep.includes("TEDDY") ||
-   rep.includes("UNICORN") ||
-   rep.includes("TOY") ||
-   rep.includes("MAP")){
-   found["POPIT"] = 1
-}
-
-
 // BALL special
-if(rep.includes("BALL") || 
-rep.includes("F.BALL") ||
-rep.includes("B.BALL") || 
-rep.includes("G.BALL")){
+if(rep.includes("BALL") || rep.includes("FBALL") || rep.includes("BBALL")){
 found["BALL"] = 1
 }
 
