@@ -653,10 +653,9 @@ async function processPDF(){
 
                 let sku = [
     ...invText.matchAll(
-        /\|[ A-Z0-9]{10}\s*\(\s*([^)]+)\s*\)/gi
+        /(?:\||\b)[A-Z0-9]{10}\s*\(\s*([^)]+)\s*\)/gi
     )
 ];
-
 
                 /* -------------------------------------
                    QUANTITY
