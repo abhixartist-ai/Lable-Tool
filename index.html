@@ -303,7 +303,7 @@ function showLoader(){document.getElementById("loader").style.display="flex"}
 function hideLoader(){document.getElementById("loader").style.display="none"}
 
 /* FILE */
-let pdfBuffer,skuMap={},summary=[],serial=1,orderNumber=1
+let pdfBuffer,asinMap={},summary=[],serial=1,orderNumber=1
 
 const dropZone=document.getElementById("dropZone")
 const fileInput=document.getElementById("pdfUpload")
@@ -349,13 +349,13 @@ reader.readAsArrayBuffer(file)
 
 /* CSV */
 async function loadCSV(){
-let res=await fetch("sku_map.csv")
+let res=await fetch("asin_map.csv")
 let text=res?await res.text():""
 text.split("\n").slice(1).forEach(r=>{
 let c=r.split(",")
 if(c.length>=2){
-if(!skuMap[c[0].trim()]) skuMap[c[0].trim()]=[]
-skuMap[c[0].trim()].push(c[1].trim())
+if(!asinMap[c[0].trim()]) asinMap[c[0].trim()]=[]
+asinMap[c[0].trim()].push(c[1].trim())
 }
 })
 }
@@ -643,7 +643,7 @@ async function processPDF(){
 
 
                 /* -------------------------------------
-                   SKU EXTRACTION
+                   ASIN EXTRACTION
 
                    Example:
                    ( Q2-HNH7-FUQ7 )
@@ -651,7 +651,7 @@ async function processPDF(){
                    ( PINK-CR-01 )
                 ------------------------------------- */
 
-                let sku = [
+                let asin = [
     ...invText.matchAll(
         /(B0[A-Z0-9]{8})/gi
     )
@@ -675,7 +675,7 @@ async function processPDF(){
                    FALLBACK quantity pattern
                 */
 
-                if(qty.length < sku.length){
+                if(qty.length < asin.length){
 
                     qty = [
                         ...invText.matchAll(
@@ -705,12 +705,12 @@ async function processPDF(){
 
 
                 /* -------------------------------------
-                   PROCESS EACH SKU
+                   PROCESS EACH ASIN
                 ------------------------------------- */
 
-                for(let k=0; k<sku.length; k++){
+                for(let k=0; k<asin.length; k++){
 
-                    let s = sku[k][1].trim();
+                    let s = asin[k][1].trim();
 
 
                     /* ---------------------------------
@@ -734,11 +734,11 @@ async function processPDF(){
 
 
                     /* ---------------------------------
-                       SKU MAP
+                       ASIN MAP
                     --------------------------------- */
 
                     let rep =
-                        skuMap[s] || [s];
+                        asinMap[s] || [s];
 
 
                     /* ---------------------------------
@@ -823,7 +823,7 @@ async function processPDF(){
                         sno:
                             serial++,
 
-                        sku:
+                        asin:
                             s,
 
                         replacement:
@@ -1135,7 +1135,7 @@ window.onfocus=null;
 /* EXCEL */
 function downloadSummary(){
 
-let data = [["Order No","Order Date","Order ID","S.No","SKU","Replacement","Qty","Total PCS","Item Total","Category","Total","10:00 am","12:00 pm","1:00 pm","1:30 pm"]]
+let data = [["Order No","Order Date","Order ID","S.No","ASIN","Replacement","Qty","Total PCS","Item Total","Category","Total","10:00 am","12:00 pm","1:00 pm","1:30 pm"]]
 
 // 🔥 CATEGORY LIST
 const categories = ["SQ","BALL","CR","RH","HEART","4COM","3COM","MAT","GLOVES","LID","POPIT","TEETHER"]
@@ -1153,7 +1153,7 @@ r.order,
 r.orderDate,
 r.orderId,
 r.sno,
-r.sku,
+r.asin,
 r.replacement,
 r.qty,
 r.pcs,
